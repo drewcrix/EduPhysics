@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "id": "unexpected_burn",
+  "name": "Unexpected Burn",
+  "description": "Something fires a thruster at t = 1500 s and nobody told flight dynamics. The filter's model is now wrong. Find the burn in the innovations (residuals) and decide how to help the filter recover.",
+  "seed": 5005,
+  "epoch": "2026-01-01T00:00:00Z",
+  "greenwichAngleAtEpochDeg": 0.0,
+  "duration": 4200,
+  "dt": 10,
+  "model": "orbit6",
+  "truth": {
+    "mu": 398600441800000.0,
+    "integrator": {
+      "method": "rk4",
+      "maxStep": 10
+    },
+    "initialState": {
+      "type": "circular",
+      "altitudeM": 550000,
+      "inclinationDeg": 51.6,
+      "raanDeg": 30,
+      "argLatDeg": 0
+    }
+  },
+  "sensors": [
+    {
+      "id": "gnss",
+      "name": "GNSS receiver",
+      "type": "gnss_position",
+      "period": 30,
+      "phase": 0,
+      "trueSigma": [
+        5,
+        5,
+        5
+      ],
+      "assumedSigma": [
+        5,
+        5,
+        5
+      ],
+      "cost": 1
+    }
+  ],
+  "estimator": {
+    "type": "ekf",
+    "initialError": [
+      30,
+      -20,
+      15,
+      0.03,
+      -0.02,
+      0.015
+    ],
+    "initialSigma": [
+      50,
+      50,
+      50,
+      0.05,
+      0.05,
+      0.05
+    ],
+    "processNoisePsd": 1e-10,
+    "seed": 7
+  },
+  "controls": {
+    "impulses": [
+      {
+        "label": "Unannounced burn",
+        "t": 1500,
+        "dv": [
+          0.3,
+          1.5,
+          -0.4
+        ],
+        "frame": "RTN",
+        "known": false
+      }
+    ]
+  }
+}

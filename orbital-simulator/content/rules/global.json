@@ -1,0 +1,379 @@
+{
+  "description": "Rules that apply in every mission and in the sandbox. Lesson files can add their own.",
+  "rules": [
+    {
+      "id": "gnss-off",
+      "when": {
+        "event": "sensorToggled",
+        "where": {
+          "sensorType": "gnss_position",
+          "enabled": false
+        }
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.gnssOff"
+        },
+        {
+          "type": "concept",
+          "concept": "dead-reckoning"
+        },
+        {
+          "type": "openPlot",
+          "plot": "uncertainty"
+        }
+      ]
+    },
+    {
+      "id": "outage-started",
+      "when": {
+        "metric": "outageActive",
+        "op": "==",
+        "value": 1
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.outageStarted"
+        },
+        {
+          "type": "openPlot",
+          "plot": "uncertainty"
+        }
+      ]
+    },
+    {
+      "id": "range-only",
+      "when": {
+        "event": "sensorToggled",
+        "where": {
+          "sensorType": "ground_range",
+          "enabled": true
+        }
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.rangeOnly"
+        },
+        {
+          "type": "concept",
+          "concept": "observability"
+        },
+        {
+          "type": "highlight",
+          "target": "observability"
+        }
+      ]
+    },
+    {
+      "id": "assumed-r-up",
+      "when": {
+        "event": "assumedNoiseChanged",
+        "where": {
+          "ratio": {
+            "op": ">",
+            "value": 2
+          }
+        }
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.rUp"
+        },
+        {
+          "type": "concept",
+          "concept": "kalman-gain"
+        }
+      ]
+    },
+    {
+      "id": "assumed-r-down",
+      "when": {
+        "event": "assumedNoiseChanged",
+        "where": {
+          "ratio": {
+            "op": "<",
+            "value": 0.5
+          }
+        }
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.rDown"
+        },
+        {
+          "type": "openPlot",
+          "plot": "nis"
+        }
+      ]
+    },
+    {
+      "id": "nis-spike",
+      "when": {
+        "metric": "nisMaxRecentNorm",
+        "op": ">",
+        "value": 8
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.nisSpike"
+        },
+        {
+          "type": "openPlot",
+          "plot": "innovations"
+        },
+        {
+          "type": "concept",
+          "concept": "innovations"
+        }
+      ]
+    },
+    {
+      "id": "q-up",
+      "when": {
+        "event": "processNoiseChanged",
+        "where": {
+          "scale": {
+            "op": ">=",
+            "value": 100
+          }
+        }
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.qUp"
+        }
+      ]
+    },
+    {
+      "id": "kf-selected",
+      "when": {
+        "event": "estimatorChanged",
+        "where": {
+          "estimator": "kf"
+        }
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.kfSelected"
+        },
+        {
+          "type": "concept",
+          "concept": "linear-kf"
+        }
+      ]
+    },
+    {
+      "id": "pf-selected",
+      "when": {
+        "event": "estimatorChanged",
+        "where": {
+          "estimator": "pf"
+        }
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.pfSelected"
+        },
+        {
+          "type": "concept",
+          "concept": "particle-filter"
+        }
+      ]
+    },
+    {
+      "id": "all-sensors-off",
+      "when": {
+        "metric": "sensorsEnabled",
+        "op": "==",
+        "value": 0
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.allSensorsOff"
+        }
+      ]
+    },
+    {
+      "id": "gimbal",
+      "when": {
+        "metric": "gimbal",
+        "op": "==",
+        "value": 1
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.gimbal"
+        },
+        {
+          "type": "concept",
+          "concept": "euler-singularity"
+        }
+      ]
+    },
+    {
+      "id": "overconfident",
+      "when": {
+        "metric": "neesRecentNorm",
+        "op": ">",
+        "value": 10
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.overconfident"
+        },
+        {
+          "type": "openPlot",
+          "plot": "nees"
+        },
+        {
+          "type": "concept",
+          "concept": "nis-nees"
+        }
+      ]
+    },
+    {
+      "id": "rank-deficient",
+      "when": {
+        "event": "observabilityRun",
+        "where": {
+          "deficient": true
+        }
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.rankDeficient"
+        },
+        {
+          "type": "concept",
+          "concept": "observability"
+        }
+      ]
+    },
+    {
+      "id": "unknown-burn",
+      "once": false,
+      "when": {
+        "event": "maneuverScheduled",
+        "where": {
+          "known": false
+        }
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.unknownBurnScheduled"
+        }
+      ]
+    },
+    {
+      "id": "known-burn",
+      "once": false,
+      "when": {
+        "event": "maneuverScheduled",
+        "where": {
+          "known": true
+        }
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.knownBurnScheduled"
+        }
+      ]
+    },
+    {
+      "id": "mission-complete",
+      "when": {
+        "event": "simFinished"
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "lesson.complete"
+        }
+      ]
+    },
+    {
+      "id": "tip-innovation",
+      "when": {
+        "all": [
+          {
+            "metric": "progress",
+            "op": ">",
+            "value": 0.25
+          },
+          {
+            "metric": "progress",
+            "op": "<",
+            "value": 0.9
+          }
+        ]
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "tip.innovation"
+        }
+      ]
+    },
+    {
+      "id": "tip-sigma",
+      "when": {
+        "all": [
+          {
+            "metric": "progress",
+            "op": ">",
+            "value": 0.55
+          },
+          {
+            "metric": "progress",
+            "op": "<",
+            "value": 0.95
+          }
+        ]
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "tip.sigma"
+        }
+      ]
+    },
+    {
+      "id": "tip-alongtrack",
+      "when": {
+        "all": [
+          {
+            "metric": "alongTrackSigma",
+            "op": ">",
+            "value": 200
+          },
+          {
+            "metric": "outageActive",
+            "op": "==",
+            "value": 0
+          }
+        ]
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "tip.alongtrack"
+        }
+      ]
+    }
+  ]
+}

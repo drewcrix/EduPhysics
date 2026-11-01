@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "id": "sensor_geometry_attitude",
+  "name": "Sensor Geometry: Attitude",
+  "description": "The full 12-state rigid spacecraft (position, velocity, ZYX Euler attitude, body rates). GNSS sees position only. Can the filter work out which way the spacecraft is pointing? Toggle the star tracker and gyro, and watch what a thrust arc does to attitude observability.",
+  "seed": 6106,
+  "epoch": "2026-01-01T00:00:00Z",
+  "greenwichAngleAtEpochDeg": 0.0,
+  "duration": 600,
+  "dt": 1,
+  "model": "rigid12",
+  "truth": {
+    "mu": 398600441800000.0,
+    "integrator": {
+      "method": "rk4",
+      "maxStep": 1
+    },
+    "spacecraft": {
+      "mass": 100.0,
+      "radius": 0.5
+    },
+    "initialState": {
+      "type": "circular",
+      "altitudeM": 550000,
+      "inclinationDeg": 51.6,
+      "raanDeg": 30,
+      "argLatDeg": 0,
+      "eulerRad": [
+        0.1,
+        0.2,
+        0.3
+      ],
+      "omegaRadS": [
+        0.002,
+        -0.001,
+        0.0015
+      ]
+    }
+  },
+  "controls": {
+    "segments": [
+      {
+        "label": "Attitude-revealing thrust arc",
+        "start": 200,
+        "end": 400,
+        "thrustN": 20.0,
+        "torqueNm": [
+          0,
+          0,
+          0
+        ],
+        "torqueAmplitudeNm": [
+          0.002,
+          0.002,
+          0.002
+        ],
+        "torqueOmegaRadS": [
+          0.05,
+          0.03,
+          0.02
+        ]
+      }
+    ],
+    "telemetrySigmaTrue": [
+      0.05,
+      0.0005,
+      0.0005,
+      0.0005
+    ],
+    "estimatorKnowsThrust": true
+  },
+  "sensors": [
+    {
+      "id": "gnss",
+      "name": "GNSS receiver",
+      "type": "gnss_position",
+      "period": 1,
+      "trueSigma": 5,
+      "cost": 1
+    },
+    {
+      "id": "gyro",
+      "name": "Rate gyro",
+      "type": "gyro",
+      "enabled": true,
+      "period": 1,
+      "trueSigma": 0.0001,
+      "cost": 0.2
+    },
+    {
+      "id": "star",
+      "name": "Star tracker",
+      "type": "star_tracker",
+      "enabled": false,
+      "period": 5,
+      "trueSigma": 0.002,
+      "cost": 0.5
+    }
+  ],
+  "estimator": {
+    "type": "ekf",
+    "initialError": [
+      20,
+      -20,
+      10,
+      0.05,
+      -0.05,
+      0.03,
+      0.15,
+      -0.12,
+      0.2,
+      0.001,
+      -0.001,
+      0.001
+    ],
+    "initialSigma": [
+      30,
+      30,
+      30,
+      0.1,
+      0.1,
+      0.1,
+      0.2,
+      0.2,
+      0.2,
+      0.002,
+      0.002,
+      0.002
+    ],
+    "processNoisePsd": [
+      1e-10,
+      1e-10,
+      1e-10,
+      1e-12,
+      1e-12,
+      1e-12
+    ],
+    "controlNoiseSigma": [
+      0.05,
+      0.0005,
+      0.0005,
+      0.0005
+    ],
+    "seed": 7
+  }
+}

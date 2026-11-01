@@ -1,0 +1,184 @@
+{
+  "id": "first-fix",
+  "order": 1,
+  "title": "First Fix",
+  "codename": "OPS-01",
+  "difficulty": "intro",
+  "summary": "Recover from a deliberately poor initial orbit estimate. Watch prediction and correction trade places.",
+  "scenario": "first_fix",
+  "truthVisible": true,
+  "requires": [],
+  "unlocks": [
+    "tracking-blackout",
+    "noisy-receiver"
+  ],
+  "concepts": [
+    "estimation-loop",
+    "kalman-gain",
+    "covariance",
+    "two-body",
+    "ekf"
+  ],
+  "briefing": {
+    "markdown": "**Situation.** A 550 km, 51.6° spacecraft has just separated from its launcher. The launch provider's state vector is off by about **2.7 km in position and 2.7 m/s in velocity** — and our filter knows it is uncertain at that level ($\\sigma = 2$ km, $2$ m/s per axis).\n\n**Your tools.** A GNSS receiver delivers a position fix every 10 s with $\\sigma = 5$ m. An **Extended Kalman Filter** combines those fixes with two-body physics,\n$$\\ddot{\\mathbf r} = -\\frac{\\mu}{r^3}\\mathbf r .$$\n\n**What to watch.** In the 3-D view the **teal** track is truth and the **amber** marker is the estimate, wrapped in its uncertainty ellipsoid (magnified). Step the **Predict** and **Update** phases separately at least once: the ellipsoid swells during prediction and collapses at each fix."
+  },
+  "prediction": {
+    "prompt": "The first GNSS fix arrives at $t = 0$ with $\\sigma = 5$ m. Right after it, roughly how large is the **velocity** uncertainty?",
+    "options": [
+      {
+        "id": "a",
+        "text": "About 5 m/s — the fix is only good to 5 m.",
+        "correct": false,
+        "feedback": "The fix doesn't measure velocity at all. Its 5 m precision limits *position*."
+      },
+      {
+        "id": "b",
+        "text": "Still about 2 m/s — one position fix says nothing about velocity.",
+        "correct": true,
+        "feedback": "Exactly. A single position sample carries no velocity information; the observability check confirms rank 3 at a single instant. It takes a *sequence* of fixes to pin down velocity."
+      },
+      {
+        "id": "c",
+        "text": "Close to zero — the filter now knows everything.",
+        "correct": false,
+        "feedback": "Only the three position components are pinned down. Velocity needs a second fix (and a model connecting the two)."
+      }
+    ],
+    "explanation": "Velocity becomes observable only through the dynamics: $\\mathbf r(t_2) \\approx \\mathbf r(t_1) + \\mathbf v\\,\\Delta t$. Watch the velocity σ fall after the *second* fix."
+  },
+  "interactive": {
+    "instructions": "Press **Play**, or step node by node. Try **Predict** then **Update** to see one full filter cycle. Open the *Uncertainty* and *Errors* plots.",
+    "controls": [
+      "phaseStep",
+      "observability",
+      "estimator",
+      "noise",
+      "processNoise"
+    ],
+    "steps": [
+      "Step one **Predict** and one **Update** — watch the ellipsoid.",
+      "Play until the position σ drops below 10 m.",
+      "Run the **observability check** with a 0 s window, then 60 s. Compare the rank."
+    ]
+  },
+  "objectives": [
+    {
+      "id": "phase",
+      "text": "Step through one Predict → Update cycle",
+      "required": true,
+      "condition": {
+        "event": "phaseStep",
+        "where": {
+          "phase": "update"
+        }
+      }
+    },
+    {
+      "id": "converge",
+      "text": "Bring the 1σ position uncertainty below 10 m",
+      "required": true,
+      "condition": {
+        "metric": "posSigma",
+        "op": "<",
+        "value": 10
+      }
+    },
+    {
+      "id": "obs",
+      "text": "Run the observability check",
+      "required": false,
+      "condition": {
+        "event": "observabilityRun"
+      }
+    },
+    {
+      "id": "finish",
+      "text": "Fly to the end of the pass (3000 s)",
+      "required": true,
+      "condition": {
+        "metric": "finished",
+        "op": "==",
+        "value": 1
+      }
+    }
+  ],
+  "hints": [
+    {
+      "id": "h1",
+      "text": "The **P** and **U** keys step the predict and update phases separately."
+    },
+    {
+      "id": "h2",
+      "text": "Velocity uncertainty drops only after the *second* fix — check the *States* plot for vx.",
+      "when": {
+        "metric": "t",
+        "op": ">",
+        "value": 30
+      }
+    }
+  ],
+  "rules": [
+    {
+      "id": "ff-first-update",
+      "when": {
+        "event": "phaseStep",
+        "where": {
+          "phase": "update"
+        }
+      },
+      "actions": [
+        {
+          "type": "say",
+          "text": "See the ellipsoid snap smaller? That's $P^+ = (I-KH)P^-(I-KH)^\\top + KRK^\\top$ at work. The **position** collapsed; velocity barely moved — yet.",
+          "mood": "happy"
+        }
+      ]
+    },
+    {
+      "id": "ff-converged",
+      "when": {
+        "metric": "posSigma",
+        "op": "<",
+        "value": 10
+      },
+      "actions": [
+        {
+          "type": "say",
+          "text": "Position uncertainty under 10 m — from 3.5 km at launch. The filter now trusts its own predictions about as much as each new fix.",
+          "mood": "celebrate"
+        }
+      ]
+    }
+  ],
+  "reasoning": {
+    "prompt": "After a few minutes the filter's position σ settles near 1–2 m, **smaller** than the 5 m GNSS noise. How can the estimate be better than any single measurement?",
+    "options": [
+      {
+        "id": "a",
+        "text": "It can't — the plot must be wrong.",
+        "correct": false,
+        "feedback": "It can, and it is right: the NEES check in the debrief confirms the error really is that small."
+      },
+      {
+        "id": "b",
+        "text": "The filter averages many fixes through the dynamics model, so independent noise partly cancels.",
+        "correct": true,
+        "feedback": "Yes. Each fix adds information; the dynamics model ties them together, so the posterior is tighter than any one measurement — as long as the model is good."
+      },
+      {
+        "id": "c",
+        "text": "GNSS secretly gets more accurate over time.",
+        "correct": false,
+        "feedback": "The true noise stays at 5 m throughout. The improvement comes from combining measurements."
+      }
+    ]
+  },
+  "scoring": {
+    "accuracyTargetM": 5,
+    "resourceBudget": 400,
+    "successMessage": "Orbit determined. Hand-over to routine operations."
+  },
+  "debrief": {
+    "markdown": "**What happened.** The first fix pinned position but left velocity at its launch uncertainty. Each later fix, combined with the dynamics, revealed velocity: the **observability** of velocity comes from the *sequence* of positions, not from any single one.\n\n**The numbers.** The steady-state position error sits below the 5 m measurement noise because the filter averages many measurements through the model. The calibration score checks that the filter's *claimed* uncertainty matched its *actual* error (ANEES/n ≈ 1).\n\n**Take-away.** $K$ is large when the prediction is poor and small when it is good. That is why the first update moved the estimate by kilometres and later ones by centimetres."
+  }
+}

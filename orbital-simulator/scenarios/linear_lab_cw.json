@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "linear_lab_cw",
+  "name": "Linear Lab: Proximity Operations",
+  "description": "An inspector drifts near a target spacecraft. Clohessy–Wiltshire relative motion is exactly linear, so here — and only here — the standard Kalman filter is the exact optimal estimator. The EKF and UKF reduce to the same answer.",
+  "seed": 8008,
+  "duration": 5700,
+  "dt": 20,
+  "model": "cw6",
+  "truth": {
+    "chiefAltitudeM": 550000,
+    "integrator": {
+      "method": "rk4",
+      "maxStep": 20
+    },
+    "initialState": {
+      "type": "cartesian",
+      "x": [
+        100,
+        0,
+        20,
+        0.0,
+        -0.2,
+        0.0
+      ]
+    }
+  },
+  "sensors": [
+    {
+      "id": "relnav",
+      "name": "Relative navigation fix",
+      "type": "gnss_position",
+      "period": 20,
+      "trueSigma": 1.0,
+      "cost": 1
+    }
+  ],
+  "estimator": {
+    "type": "kf",
+    "initialError": [
+      10,
+      -10,
+      5,
+      0.01,
+      -0.01,
+      0.01
+    ],
+    "initialSigma": [
+      20,
+      20,
+      20,
+      0.02,
+      0.02,
+      0.02
+    ],
+    "processNoisePsd": 1e-12,
+    "seed": 7
+  }
+}

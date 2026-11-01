@@ -1,0 +1,151 @@
+# Mission Control Academy (orbital-simulator/) — continuous integration.
+#
+# Added alongside (not replacing) any existing workflows. Every job runs inside
+# orbital-simulator/. A failing step fails its job and turns the check red; nothing here
+# deploys, publishes or pushes anything.
+name: Orbital Simulator CI
+
+on:
+  push:
+    paths:
+      - 'orbital-simulator/**'
+      - '.github/workflows/orbital-simulator-ci.yml'
+  pull_request:
+    paths:
+      - 'orbital-simulator/**'
+      - '.github/workflows/orbital-simulator-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: orbital-simulator-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: orbital-simulator
+
+env:
+  EMSDK_VERSION: 4.0.10
+  NODE_VERSION: 22
+
+jobs:
+  native:
+    name: Native C++ build + CTest (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Ninja (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - name: Install Ninja (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja
+      - name: Configure
+        run: cmake --preset native
+      - name: Build (warnings shown)
+        run: cmake --build --preset native
+      - name: Unit tests (CTest label "unit")
+        run: ctest --preset native -L unit
+      - name: Mathematical regression checks (CTest label "regression")
+        run: ctest --preset native -L regression
+      - name: Upload native CLI
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: osim-cli-linux
+          path: orbital-simulator/build/native/core/osim_cli
+          retention-days: 7
+
+  sanitizers:
+    name: Debug build with ASan/UBSan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - run: cmake --preset native-debug
+      - run: cmake --build --preset native-debug
+      - name: Tests under sanitizers
+        env:
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+          ASAN_OPTIONS: detect_leaks=1
+        run: ctest --preset native-debug
+
+  wasm:
+    name: WebAssembly build + integration check
+    runs-on: ubuntu-latest
+    needs: native
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: ${{ env.EMSDK_VERSION }}
+      - name: Configure (Emscripten)
+        run: cmake --preset wasm
+      - name: Build osim.mjs + osim.wasm
+        run: cmake --build --preset wasm
+      - uses: actions/download-artifact@v4
+        with:
+          name: osim-cli-linux
+          path: orbital-simulator/build/native/core
+      - run: chmod +x build/native/core/osim_cli
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Run every scenario in WebAssembly and compare with native
+        run: node scripts/wasm_integration_test.mjs build/wasm/core/osim.mjs build/native/core/osim_cli
+      - uses: actions/upload-artifact@v4
+        with:
+          name: osim-wasm
+          path: |
+            orbital-simulator/build/wasm/core/osim.mjs
+            orbital-simulator/build/wasm/core/osim.wasm
+          retention-days: 7
+
+  frontend:
+    name: Frontend lint, types, unit tests, build, browser smoke test
+    runs-on: ubuntu-latest
+    needs: wasm
+    defaults:
+      run:
+        working-directory: orbital-simulator/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: osim-wasm
+          path: orbital-simulator/build/wasm/core
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: orbital-simulator/web/package-lock.json
+      - run: npm ci
+      - run: npm run wasm:copy
+      - name: Lint
+        run: npm run lint
+      - name: Type-check
+        run: npm run typecheck
+      - name: Unit tests (lesson engine, content validation, scoring, WASM determinism)
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Browser smoke test
+        env:
+          PW_CHANNEL: chromium
+        run: npx playwright test --reporter=line
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: orbital-simulator/web/test-results
+          retention-days: 7

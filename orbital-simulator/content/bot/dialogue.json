@@ -1,0 +1,54 @@
+{
+  "bot": { "name": "ORBI", "tagline": "Your flight-dynamics co-pilot" },
+  "lines": {
+    "welcome.first": { "mood": "happy", "text": "Hi, I'm **ORBI**. Welcome to Mission Control Academy! Out here we never *know* where a spacecraft is — we **estimate** it from noisy measurements and a physics model. Ready to fly your first shift?" },
+    "welcome.back": { "mood": "happy", "text": "Welcome back, operator. Your console is warm and the tracking network is standing by." },
+    "onboard.loop": { "mood": "neutral", "text": "Every estimator runs the same loop: **predict** with physics, **compare** with a measurement, **correct** by an amount that depends on who you trust more." },
+    "onboard.truth": { "mood": "thinking", "text": "In guided missions you'll see the *true* orbit in teal. In challenges it's hidden until the debrief — just like real operations." },
+    "onboard.controls": { "mood": "neutral", "text": "Use **Space** to play/pause, **N** to step one node, **P** then **U** to step the predict and update phases separately." },
+    "onboard.ready": { "mood": "celebrate", "text": "Pick **First Fix** to begin. I'll pop in whenever something interesting happens." },
+
+    "help.sensors": { "mood": "neutral", "text": "Sensors: switch each one on/off and tune its **assumed** noise $R$. The *true* noise is what the hardware really does — the filter only knows what you tell it." },
+    "help.estimator": { "mood": "neutral", "text": "Estimator: switching hands the current mean and covariance to the new filter, so you can compare them mid-flight." },
+    "help.processNoise": { "mood": "neutral", "text": "Process noise $Q$: how much the filter distrusts its own physics model. Bigger $Q$ means uncertainty grows faster between measurements." },
+    "help.maneuvers": { "mood": "neutral", "text": "Maneuvers: schedule a burn in the radial / transverse / normal (RTN) frame. Tick *known* to tell the filter; untick it to surprise it." },
+    "help.observability": { "mood": "neutral", "text": "Observability check: stacks $H\\,\\Phi$ for every planned measurement in a window and asks which state directions they can see. It's a *local, linearised* test." },
+    "help.playback": { "mood": "neutral", "text": "Playback speed only changes how fast you *watch*. The simulation steps are fixed, so results are identical at any speed." },
+
+    "tip.innovation": { "mood": "thinking", "text": "Tip: the **innovation** $\\nu = z - h(\\hat x^-)$ is the filter's surprise. Healthy filters have innovations that look like the noise they assumed." },
+    "tip.sigma": { "mood": "thinking", "text": "Tip: a good filter is not one with tiny $\\sigma$ — it's one whose errors are the size it *claims* they are." },
+    "tip.alongtrack": { "mood": "thinking", "text": "Tip: along-track uncertainty grows fastest. A tiny velocity error becomes a large position error once it has had an orbit to accumulate." },
+    "tip.phase": { "mood": "thinking", "text": "Tip: step the **Predict** and **Update** phases separately and watch the ellipsoid inflate, then snap smaller." },
+
+    "rules.gnssOff": { "mood": "alert", "text": "GNSS is off. From now on the filter is **dead reckoning**: it integrates its model forward with no corrections. Watch the uncertainty plot — $P$ grows as $\\Phi P \\Phi^\\top + Q_d$ every step." },
+    "rules.outageStarted": { "mood": "alert", "text": "Tracking outage! No measurements are arriving. The estimate keeps moving with the physics, and its uncertainty is now the only honest thing we have." },
+    "rules.rangeOnly": { "mood": "thinking", "text": "Range-only tracking measures **one** number per sample: distance. One range can't pin down a 3-D position. Try the observability check to see what a pass of ranges can and can't determine." },
+    "rules.rUp": { "mood": "thinking", "text": "You raised the assumed measurement noise. With a larger $R$ the gain $K = P H^\\top (H P H^\\top + R)^{-1}$ shrinks: the filter trusts each measurement **less**. Is that what the innovations say it should do?" },
+    "rules.rDown": { "mood": "alert", "text": "You told the filter the sensor is *more* precise than it is. Expect over-confidence: the filter chases the noise and its NIS climbs above the χ² band." },
+    "rules.nisSpike": { "mood": "alert", "text": "Whoa — the innovations just jumped way outside their expected spread. Either the sensor glitched or the **model is wrong**. Open the innovations plot and look at *when* it started." },
+    "rules.qUp": { "mood": "thinking", "text": "More process noise tells the filter its predictions are shakier, so it leans harder on new measurements. Great for recovering from a surprise — but too much makes the estimate jittery." },
+    "rules.kfSelected": { "mood": "thinking", "text": "The linear KF never re-linearises. That's exact for linear dynamics, but two-body gravity isn't linear — watch for divergence once the true state drifts from its linearisation point." },
+    "rules.pfSelected": { "mood": "thinking", "text": "Particle filter selected: hundreds of possible spacecraft, weighted by how well each explains the data. Watch the effective sample size and the compute cost." },
+    "rules.allSensorsOff": { "mood": "alert", "text": "Every sensor is off. Nothing about the state is observable now — the filter can only predict." },
+    "rules.gimbal": { "mood": "alert", "text": "Pitch is near ±90° — **gimbal lock** for ZYX Euler angles. Roll and yaw become ambiguous and the Euler-rate equations blow up. Real flight software uses quaternions for exactly this reason." },
+    "rules.overconfident": { "mood": "alert", "text": "The NEES says the estimate is much worse than the covariance claims. The filter is **over-confident** — a dangerous state for operations." },
+    "rules.rankDeficient": { "mood": "thinking", "text": "Rank-deficient! Some combination of states produces **no change** in any measurement you've planned. No estimator, however clever, can recover those directions from this data." },
+    "rules.unknownBurnScheduled": { "mood": "thinking", "text": "An unannounced burn is scheduled. The filter won't know — let's see if you can spot it in the residuals." },
+    "rules.knownBurnScheduled": { "mood": "happy", "text": "Burn scheduled and the filter has been told. Its prediction will include the commanded Δv plus an execution uncertainty." },
+    "rules.truthHidden": { "mood": "neutral", "text": "Truth is hidden for this challenge. You'll have to judge the filter by its innovations alone — the debrief will reveal how you did." },
+
+    "lesson.complete": { "mood": "celebrate", "text": "Mission complete! Let's look at the debrief." },
+    "lesson.objective": { "mood": "happy", "text": "Objective complete — nice work." },
+    "lesson.predictionNeeded": { "mood": "thinking", "text": "Before we run: make a prediction. Committing to a guess is how you find out what you really believe." }
+  },
+  "onboarding": ["welcome.first", "onboard.loop", "onboard.truth", "onboard.controls", "onboard.ready"],
+  "controlHelp": {
+    "sensors": "help.sensors",
+    "estimator": "help.estimator",
+    "processNoise": "help.processNoise",
+    "maneuvers": "help.maneuvers",
+    "observability": "help.observability",
+    "playback": "help.playback"
+  },
+  "idleTips": ["tip.innovation", "tip.sigma", "tip.alongtrack", "tip.phase"]
+}

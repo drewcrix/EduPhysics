@@ -1,0 +1,131 @@
+{
+  "concepts": [
+    {
+      "id": "estimation-loop",
+      "title": "The predict–update loop",
+      "summary": "Every recursive estimator alternates between predicting with a model and correcting with a measurement.",
+      "lessons": ["first-fix"],
+      "body": "A recursive estimator carries a **belief** about the state: a best guess $\\hat x$ and an uncertainty $P$.\n\n1. **Predict.** Push the belief through the dynamics, $\\hat x^- = \\phi(\\hat x^+, u, \\Delta t)$, and grow the uncertainty, $P^- = \\Phi P^+ \\Phi^\\top + Q_d$.\n2. **Compare.** A measurement $z$ arrives. The model predicted $h(\\hat x^-)$; the difference $\\nu = z - h(\\hat x^-)$ is the **innovation**.\n3. **Update.** Move the estimate part-way toward what the measurement suggests, $\\hat x^+ = \\hat x^- + K\\nu$, and shrink the uncertainty.\n\nThe gain $K$ decides *how far*. Everything else in this course is about choosing $K$ well."
+    },
+    {
+      "id": "kalman-gain",
+      "title": "The Kalman gain",
+      "summary": "K balances how much you trust the prediction against how much you trust the measurement.",
+      "lessons": ["first-fix", "noisy-receiver"],
+      "body": "$$K = P^- H^\\top \\left(H P^- H^\\top + R\\right)^{-1} = P^- H^\\top S^{-1}$$\n\n- If the prediction is uncertain (large $P^-$), $K$ is large: follow the measurement.\n- If the sensor is noisy (large $R$), $K$ is small: stick with the prediction.\n\nThe simulator never forms $S^{-1}$ explicitly; it solves $S K^\\top = H P^-$ with an $LDL^\\top$ factorisation, which is cheaper and numerically safer.\n\nAfter the update it uses the **Joseph form** $P^+ = (I - KH)P^-(I-KH)^\\top + KRK^\\top$, which stays symmetric positive semidefinite even with rounding errors or a sub-optimal gain."
+    },
+    {
+      "id": "innovations",
+      "title": "Innovations (residuals)",
+      "summary": "The filter's surprise. Their size and pattern tell you whether the model and noise settings are right.",
+      "lessons": ["unexpected-burn", "noisy-receiver"],
+      "body": "The innovation $\\nu = z - h(\\hat x^-)$ should look like zero-mean noise with covariance $S = HP^-H^\\top + R$.\n\n- **Too large, randomly:** $R$ (or $P$) is too small — the filter is over-confident.\n- **Too small:** $R$ is too large — the filter is ignoring good data.\n- **A sudden, persistent offset:** the *model* changed — a burn nobody told you about, a wrong gravity constant, a broken sensor.\n\nInnovations are available in real operations; truth is not. That makes them the operator's most important diagnostic."
+    },
+    {
+      "id": "nis-nees",
+      "title": "NIS and NEES",
+      "summary": "Normalised squared errors that test whether a filter's uncertainty is honest.",
+      "lessons": ["noisy-receiver", "filter-showdown"],
+      "body": "**NIS** (normalised innovation squared): $\\epsilon_\\nu = \\nu^\\top S^{-1} \\nu$. If the filter is consistent and Gaussian, $\\epsilon_\\nu \\sim \\chi^2_m$ with $m$ = measurement dimension, so its average should be $\\approx m$.\n\n**NEES** (normalised estimation error squared): $\\epsilon_x = e^\\top P^{-1} e$ with $e = x - \\hat x$. It needs the **truth**, so it exists only in simulation and debriefs; its average should be $\\approx n$.\n\n**Caveats.** These tests assume Gaussian errors; a particle filter's belief may not be Gaussian. Successive values are correlated in time, so time-averaged χ² bounds are optimistic — a Monte-Carlo average over independent runs is the rigorous version (the C++ test suite does exactly that). Single samples fluctuate: one value outside the band means little; a pattern means a lot."
+    },
+    {
+      "id": "covariance",
+      "title": "Covariance and confidence regions",
+      "summary": "P describes the size, shape and orientation of the uncertainty; per-axis bands and joint ellipsoids answer different questions.",
+      "lessons": ["first-fix", "tracking-blackout"],
+      "body": "The diagonal of $P$ holds variances; off-diagonals hold correlations. The eigenvectors of the $3\\times3$ position block are the axes of the uncertainty ellipsoid.\n\n**Per-axis band:** $\\pm\\sqrt{\\chi^2_1(p)\\,P_{ii}}$ — e.g. $\\pm 2.58\\sigma$ for 99%. Each coordinate on its own is inside with probability $p$.\n\n**Joint region:** $e^\\top P^{-1} e \\le \\chi^2_3(p)$ — for 99% the scale is $\\sqrt{11.34} = 3.37\\sigma$. Using the 1-D value for a 3-D ellipsoid would only contain about 91.6% of the probability.\n\nThe 3-D view draws the joint ellipsoid (magnified so you can see it); the error plots draw per-axis bands."
+    },
+    {
+      "id": "dead-reckoning",
+      "title": "Dead reckoning",
+      "summary": "With no measurements, the filter can only integrate its model forward — and its uncertainty must grow.",
+      "lessons": ["tracking-blackout"],
+      "body": "During an outage there is no update step, so each prediction compounds: $P_{k+1} = \\Phi P_k \\Phi^\\top + Q_d$.\n\nIn orbit the growth is lopsided. A small error in velocity (or semi-major axis) changes the orbital **period**, so the spacecraft slowly runs ahead of or behind the prediction: **along-track** uncertainty grows roughly linearly with time and soon dominates. Radial and cross-track errors stay bounded and oscillate once per orbit.\n\nA good filter's error stays *inside* its growing uncertainty. When measurements return, the first fix collapses the along-track uncertainty — and because position and velocity are correlated, it corrects the velocity too."
+    },
+    {
+      "id": "observability",
+      "title": "Observability",
+      "summary": "Whether a set of measurements contains enough information to determine every state — locally, over a window.",
+      "lessons": ["sensor-geometry", "first-fix"],
+      "body": "Stack the sensitivity of each planned measurement to the *initial* state over a window:\n\n$$\\mathcal{O} = \\begin{bmatrix} R_1^{-1/2} H_1 \\Phi(t_1,t_0) \\\\ \\vdots \\\\ R_N^{-1/2} H_N \\Phi(t_N,t_0) \\end{bmatrix} S$$\n\n($S$ scales each state by a characteristic size so units are comparable). If $\\mathcal{O}$ has full rank $n$, small deviations in every direction change *some* measurement. Its null space lists directions you can never see.\n\n- One position fix: rank 3 — velocity is invisible at a single instant.\n- Two fixes a few seconds apart: rank 6 — the difference reveals velocity.\n- GNSS only on the 12-state body: rank 6 while coasting — attitude doesn't affect position until you **thrust**.\n\nThis is a **local, linearised** test along the estimated trajectory. Full rank does not guarantee a good estimate (the condition number may be terrible), and it is not a global statement about the nonlinear system."
+    },
+    {
+      "id": "process-noise",
+      "title": "Process noise Q",
+      "summary": "How much the filter distrusts its own dynamics model.",
+      "lessons": ["unexpected-burn", "tracking-blackout"],
+      "body": "The simulator models unknown accelerations as white noise $w$ with power spectral density $Q_c$ (units m²/s³) and discretises it exactly for the elapsed time:\n\n$$Q_d = \\int_0^{\\Delta t} \\Phi(\\Delta t, s)\\, G\\, Q_c\\, G^\\top \\Phi(\\Delta t, s)^\\top ds$$\n\nFor a short step the velocity variance grows like $q\\,\\Delta t$ and position like $q\\,\\Delta t^3/3$. Because $Q_c$ is a *density*, halving the step size does not change how fast uncertainty grows — unlike a fixed per-step $Q$.\n\nToo little $Q$: the filter becomes stubborn and can't follow surprises. Too much: it forgets its model and becomes as noisy as the raw measurements."
+    },
+    {
+      "id": "two-body",
+      "title": "Two-body dynamics",
+      "summary": "Point-mass gravity, the starting point of orbit determination.",
+      "lessons": ["first-fix"],
+      "body": "$$\\ddot{\\mathbf r} = -\\frac{\\mu}{r^3}\\mathbf r + \\mathbf a_{\\text{thrust}}, \\qquad \\mu = 3.986004418\\times10^{14}\\ \\text{m}^3/\\text{s}^2$$\n\nWith no thrust, specific energy $\\varepsilon = v^2/2 - \\mu/r$ and angular momentum $\\mathbf h = \\mathbf r\\times\\mathbf v$ are conserved. The test suite checks the RK4 propagator conserves both to better than $10^{-9}$ (relative) over five orbits.\n\nThe Jacobian used by the EKF is the gravity-gradient matrix $\\partial \\mathbf a / \\partial \\mathbf r = -\\frac{\\mu}{r^3} I + \\frac{3\\mu}{r^5}\\mathbf r\\mathbf r^\\top$ — the same entries as in the original Python model."
+    },
+    {
+      "id": "rk4",
+      "title": "RK4 and the state-transition matrix",
+      "summary": "How the simulator integrates both the state and its sensitivity.",
+      "lessons": [],
+      "body": "Classical fourth-order Runge–Kutta with zero-order-hold input:\n\n$$x_{k+1} = x_k + \\tfrac{T}{6}(k_1 + 2k_2 + 2k_3 + k_4)$$\n\nIts global error falls as $T^4$: halving the step cuts the error by 16 (the test suite measures 16.5).\n\nThe EKF needs $\\Phi = \\partial x_{k+1}/\\partial x_k$. Instead of the first-order $I + TA$, the simulator integrates $\\dot\\Phi = A\\Phi$ with the *same* RK4 stages as the state. That gives exactly the Jacobian of the discrete RK4 step — consistent with how the mean was propagated."
+    },
+    {
+      "id": "ekf",
+      "title": "Extended Kalman Filter",
+      "summary": "Linearise about the current estimate at every step.",
+      "lessons": ["first-fix", "filter-showdown"],
+      "body": "The EKF propagates the mean through the full nonlinear model and the covariance through the Jacobians $\\Phi$ and $H$ evaluated **at the current estimate**. Because it re-linearises every step, it follows the trajectory well as long as the uncertainty is small compared with the curvature of the dynamics and measurement functions.\n\nWhen the initial uncertainty is large (tens of km in LEO) the linearisation can be poor: the true uncertainty becomes curved ('banana-shaped') but the EKF can only represent an ellipse."
+    },
+    {
+      "id": "ukf",
+      "title": "Unscented Kalman Filter",
+      "summary": "Propagate a few carefully chosen sample points instead of Jacobians.",
+      "lessons": ["filter-showdown"],
+      "body": "The UKF picks $2n+1$ **sigma points** $\\hat x \\pm$ columns of $\\sqrt{(n+\\lambda)P}$, pushes each through the *nonlinear* dynamics and measurement model, and recomputes a weighted mean and covariance. It captures the mean correctly to second order without any Jacobians.\n\nScaling used here: $\\alpha = 1$, $\\beta = 2$, $\\kappa = 0$ ($\\lambda = 0$). The textbook $\\alpha = 10^{-3}$ gives a central covariance weight near $-10^6$ for orbit-sized states, which routinely produces non-positive-definite covariances in double precision — so it is available but not the default.\n\nCost: $2n+1$ propagations per step instead of one."
+    },
+    {
+      "id": "particle-filter",
+      "title": "Particle filter",
+      "summary": "Represent the belief by many weighted samples; no Gaussian assumption.",
+      "lessons": ["filter-showdown"],
+      "body": "A bootstrap particle filter propagates $N$ possible spacecraft through the dynamics, weights each by the likelihood of the measurement, and **resamples** when the effective sample size $N_\\text{eff} = 1/\\sum w_i^2$ gets too small.\n\nIn a 6-D state with very precise sensors, almost all particles get negligible weight after one update (**degeneracy**). This implementation counters that with regularised resampling (a Gaussian kernel) and reports every safeguard it uses: resamples, full-rank kernel fallbacks and collapse re-seeds. Look at the dynamics-evaluation count: the PF is honest about uncertainty but costs ~1000× an EKF here."
+    },
+    {
+      "id": "linear-kf",
+      "title": "Linear Kalman Filter",
+      "summary": "Optimal for linear-Gaussian systems — and only for those.",
+      "lessons": ["filter-showdown"],
+      "body": "The standard KF assumes $x_{k+1} = F x_k + w$ and $z = Hx + v$. For two-body orbits that is false, so the simulator offers two **clearly labelled** linear filters:\n\n- **Linearised KF (reference trajectory):** linearise once about a nominal orbit propagated from the initial estimate, then estimate the deviation $\\delta x$. Works while $\\delta x$ stays small.\n- **Standard KF (frozen linearisation):** linearise gravity once, at $t = 0$, and use that constant model forever. Gravity's direction rotates as the spacecraft moves; the frozen model doesn't, and the filter **diverges** — while still reporting small uncertainty.\n\nIn the *Linear Lab* (Clohessy–Wiltshire relative motion) the dynamics really are linear, and the KF is exactly optimal: the EKF and UKF reproduce it to $10^{-6}$."
+    },
+    {
+      "id": "ground-tracking",
+      "title": "Ground-station range and bearing",
+      "summary": "Nonlinear measurements from a site on the rotating Earth.",
+      "lessons": ["sensor-geometry"],
+      "body": "The station sits at latitude/longitude on a spherical Earth that rotates at $\\omega_E = 7.292\\times10^{-5}$ rad/s. The line of sight $\\boldsymbol\\rho = \\mathbf r - \\mathbf r_s(t)$ is rotated into local East–North–Up coordinates $[E, N, U]$, and\n\n$$\\rho = \\|\\boldsymbol\\rho\\|, \\quad A = \\operatorname{atan2}(E, N), \\quad El = \\operatorname{atan2}\\big(U, \\sqrt{E^2+N^2}\\big)$$\n\nThe station can only track while $El$ is above its elevation mask (10°). Range is precise (15 m here) but angles are coarse: 0.5 mrad of azimuth error at 1500 km slant range is 750 m sideways."
+    },
+    {
+      "id": "euler-singularity",
+      "title": "Euler angles and gimbal lock",
+      "summary": "Why the 12-state model warns near ±90° pitch, and why real software uses quaternions.",
+      "lessons": ["sensor-geometry"],
+      "body": "With ZYX angles the kinematics are $\\dot\\phi = p + \\tan\\theta(q\\sin\\phi + r\\cos\\phi)$, $\\dot\\psi = (q\\sin\\phi + r\\cos\\phi)/\\cos\\theta$. At $\\theta = \\pm 90°$, $\\cos\\theta = 0$: roll and yaw describe the *same* rotation and the rates blow up.\n\nGuardrails here: $\\cos\\theta$ is clamped away from zero, normalisation maps $\\theta$ past 90° to the equivalent $(\\phi+\\pi, \\pi-\\theta, \\psi+\\pi)$, and the UI warns within 2.6° of the singularity. A quaternion attitude state (four numbers, one constraint) has no singularity; the code keeps quaternion conversions ready for that migration."
+    },
+    {
+      "id": "model-mismatch",
+      "title": "Model mismatch",
+      "summary": "When the filter's physics differs from reality.",
+      "lessons": ["unexpected-burn", "noisy-receiver"],
+      "body": "The simulator keeps **truth settings** and **estimator settings** separate on purpose: different noise, different $\\mu$, maneuvers the filter doesn't know about. Mismatch shows up as innovations that are too big, biased, or correlated in time.\n\nCommon remedies: inflate $Q$ (admit the model is imperfect), estimate the missing effect (e.g. add a maneuver or bias state), or reset the covariance after a detected event. Each trades accuracy for robustness."
+    },
+    {
+      "id": "reference-frames",
+      "title": "Frames, units and time",
+      "summary": "ECI, ECEF, ENU, RTN — and why everything inside is SI.",
+      "lessons": [],
+      "placeholder": true,
+      "body": "*Placeholder for your own explanation.* The essentials are in `docs/MATH_AND_UNITS.md`: ECI is the integration frame; ECEF rotates with the Earth by $\\theta_g(t) = \\theta_{g0} + \\omega_E t$; ENU is local to a ground station; RTN (radial–transverse–normal) is used for maneuvers and error reporting."
+    }
+  ]
+}

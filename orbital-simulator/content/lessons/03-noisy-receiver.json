@@ -1,0 +1,171 @@
+{
+  "id": "noisy-receiver",
+  "order": 3,
+  "title": "Noisy Receiver",
+  "codename": "OPS-03",
+  "difficulty": "core",
+  "summary": "The receiver is six times noisier than its datasheet. Retune R and see how the filter re-weights measurements.",
+  "scenario": "noisy_receiver",
+  "truthVisible": true,
+  "requires": [
+    "first-fix"
+  ],
+  "unlocks": [
+    "sensor-geometry"
+  ],
+  "concepts": [
+    "kalman-gain",
+    "nis-nees",
+    "innovations",
+    "model-mismatch"
+  ],
+  "briefing": {
+    "markdown": "**Situation.** The GNSS receiver's real noise is $\\sigma = 30$ m, but the filter's $R$ still uses the datasheet value $\\sigma = 5$ m. The filter believes every fix far too much.\n\n**Your instrument panel.** The **NIS** plot shows $\\nu^\\top S^{-1}\\nu$ for every fix. For a healthy 3-D measurement it should hover around 3 and stay inside the shaded χ² band most of the time."
+  },
+  "prediction": {
+    "prompt": "With R too small (5 m assumed vs 30 m real), what will the NIS do?",
+    "options": [
+      {
+        "id": "low",
+        "text": "Sit below the band — the filter is too cautious.",
+        "correct": false,
+        "feedback": "That's the symptom of R being too *large*."
+      },
+      {
+        "id": "high",
+        "text": "Sit well above the band — innovations are bigger than the filter expects.",
+        "correct": true,
+        "feedback": "Yes. Real residuals of ~30 m are being judged against a 5 m yardstick, so NIS ≈ (30/5)² × 3 ≈ 100."
+      },
+      {
+        "id": "ok",
+        "text": "Stay normal — R doesn't affect NIS.",
+        "correct": false,
+        "feedback": "NIS divides by $S = HPH^\\top + R$, so R matters directly."
+      }
+    ]
+  },
+  "interactive": {
+    "instructions": "Open the *Sensors* panel and slide the GNSS **assumed σ** toward the true value. Watch the NIS settle and the estimate become smoother.",
+    "controls": [
+      "noise",
+      "trueNoise",
+      "processNoise",
+      "covarianceEditor"
+    ],
+    "steps": [
+      "Watch the NIS for a minute with the wrong R.",
+      "Raise assumed σ toward 30 m.",
+      "Try overshooting (assumed 100 m) — what happens?"
+    ]
+  },
+  "objectives": [
+    {
+      "id": "notice",
+      "text": "Observe NIS above 5× its expected value",
+      "required": true,
+      "condition": {
+        "metric": "nisRecentNorm",
+        "op": ">",
+        "value": 5
+      }
+    },
+    {
+      "id": "retune",
+      "text": "Retune assumed σ to within 0.7–1.5× the true σ",
+      "required": true,
+      "condition": {
+        "all": [
+          {
+            "metric": "assumedNoiseRatio",
+            "op": ">=",
+            "value": 0.7
+          },
+          {
+            "metric": "assumedNoiseRatio",
+            "op": "<=",
+            "value": 1.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "finish",
+      "text": "Finish the run",
+      "required": true,
+      "condition": {
+        "metric": "finished",
+        "op": "==",
+        "value": 1
+      }
+    }
+  ],
+  "hints": [
+    {
+      "id": "h1",
+      "text": "Ratio = assumed σ ÷ true σ. You want it near 1."
+    }
+  ],
+  "rules": [
+    {
+      "id": "nr-honest",
+      "when": {
+        "all": [
+          {
+            "metric": "assumedNoiseRatio",
+            "op": ">=",
+            "value": 0.7
+          },
+          {
+            "metric": "assumedNoiseRatio",
+            "op": "<=",
+            "value": 1.5
+          },
+          {
+            "metric": "nisRecentNorm",
+            "op": "<",
+            "value": 2
+          }
+        ]
+      },
+      "actions": [
+        {
+          "type": "say",
+          "text": "NIS is back in family. The filter's yardstick finally matches the receiver.",
+          "mood": "celebrate"
+        }
+      ]
+    }
+  ],
+  "reasoning": {
+    "prompt": "You set assumed σ = 100 m (much larger than the true 30 m). What changes?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The estimate becomes more accurate because the filter is more careful.",
+        "correct": false,
+        "feedback": "Being too careful wastes information: the filter discounts good measurements and the estimate gets *noisier* over the long run."
+      },
+      {
+        "id": "b",
+        "text": "The gain shrinks, the estimate relies more on the model, and NIS drops below its band (under-confidence).",
+        "correct": true,
+        "feedback": "Correct. Mis-tuning in either direction hurts; the NIS band tells you which way you are off."
+      },
+      {
+        "id": "c",
+        "text": "Nothing — R only matters for plotting.",
+        "correct": false,
+        "feedback": "R is in the gain $K = PH^\\top(HPH^\\top+R)^{-1}$."
+      }
+    ]
+  },
+  "scoring": {
+    "accuracyTargetM": 15,
+    "resourceBudget": 400
+  },
+  "debrief": {
+    "markdown": "**The filter only knows what you tell it.** True noise lives in the hardware; assumed noise lives in $R$. When they disagree the innovations say so — NIS above the band means over-confidence, below means under-confidence.\n\n**Placeholder for your teaching notes:** relate this to real receiver datasheets, multipath, or ionospheric errors.",
+    "placeholder": true
+  }
+}

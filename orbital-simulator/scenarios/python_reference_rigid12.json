@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "id": "python_reference_rigid12",
+  "name": "Python Reference Case",
+  "description": "The scenario from the original orbital_ekf.py: 30 s at T = 0.01 s, 50 N thrust along body x and sinusoidal body torques, GNSS + attitude + gyro readings. Process noise follows the reference's per-sample input-noise model.",
+  "seed": 9009,
+  "duration": 30,
+  "dt": 0.01,
+  "model": "rigid12",
+  "truth": {
+    "mu": 398600441800000.0,
+    "integrator": {
+      "method": "rk4",
+      "maxStep": 0.01
+    },
+    "spacecraft": {
+      "mass": 100.0,
+      "radius": 0.5
+    },
+    "initialState": {
+      "type": "circular",
+      "altitudeM": 550000,
+      "inclinationDeg": 0,
+      "raanDeg": 0,
+      "argLatDeg": 0,
+      "eulerRad": [
+        0,
+        0,
+        0
+      ],
+      "omegaRadS": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "controls": {
+    "segments": [
+      {
+        "label": "Reference thrust and torques",
+        "start": 0,
+        "end": 30,
+        "thrustN": 50.0,
+        "torqueAmplitudeNm": [
+          0.05,
+          0.05,
+          0.05
+        ],
+        "torqueOmegaRadS": [
+          0.5,
+          0.3,
+          0.2
+        ]
+      }
+    ],
+    "telemetrySigmaTrue": [
+      0.01,
+      0.01,
+      0.01,
+      0.01
+    ],
+    "estimatorKnowsThrust": true
+  },
+  "sensors": [
+    {
+      "id": "gnss",
+      "name": "GNSS receiver",
+      "type": "gnss_position",
+      "period": 0.01,
+      "trueSigma": 5.0
+    },
+    {
+      "id": "star",
+      "name": "Attitude sensor",
+      "type": "star_tracker",
+      "period": 0.01,
+      "trueSigma": 0.5
+    },
+    {
+      "id": "gyro",
+      "name": "Gyroscope",
+      "type": "gyro",
+      "period": 0.01,
+      "trueSigma": 0.1
+    }
+  ],
+  "estimator": {
+    "type": "ekf",
+    "initialError": [
+      100,
+      -100,
+      50,
+      1,
+      -1,
+      0.5,
+      0.05,
+      -0.05,
+      0.05,
+      0.001,
+      -0.001,
+      0.001
+    ],
+    "initialSigma": [
+      100,
+      100,
+      100,
+      1,
+      1,
+      1,
+      0.05,
+      0.05,
+      0.05,
+      0.001,
+      0.001,
+      0.001
+    ],
+    "processNoisePsd": 0,
+    "controlNoiseSigma": [
+      0.01,
+      0.01,
+      0.01,
+      0.01
+    ],
+    "seed": 7
+  }
+}

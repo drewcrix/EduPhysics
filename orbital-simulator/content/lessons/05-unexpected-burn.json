@@ -1,0 +1,171 @@
+{
+  "id": "unexpected-burn",
+  "order": 5,
+  "title": "Unexpected Burn",
+  "codename": "OPS-05",
+  "difficulty": "challenge",
+  "summary": "Something fired a thruster and nobody told you. Find it in the residuals and help the filter recover.",
+  "scenario": "unexpected_burn",
+  "truthVisible": false,
+  "requires": [
+    "planned-burn"
+  ],
+  "unlocks": [
+    "filter-showdown"
+  ],
+  "concepts": [
+    "innovations",
+    "model-mismatch",
+    "process-noise"
+  ],
+  "briefing": {
+    "markdown": "**Situation.** This is a **challenge**: truth is hidden. Somewhere in this 70-minute shift, an unannounced burn happens. Your filter's model doesn't include it, so the filter will fight the measurements.\n\n**What you can see.** Only what operators really see: the estimate, its covariance, and the **innovations**.\n\n**What you can do.** Raise the process noise $Q$ to tell the filter its model is shakier, so it follows the measurements again."
+  },
+  "prediction": {
+    "prompt": "If the filter keeps a tiny $Q$ after the burn, what happens?",
+    "options": [
+      {
+        "id": "fine",
+        "text": "It recovers quickly on its own.",
+        "correct": false,
+        "feedback": "With a tiny $Q$ and a small $P$, the gain is tiny: the filter keeps trusting its (wrong) prediction."
+      },
+      {
+        "id": "stuck",
+        "text": "It stays wrong for a long time, with large, persistent innovations.",
+        "correct": true,
+        "feedback": "Yes — an over-confident filter is stubborn. That's why operators watch NIS and react."
+      },
+      {
+        "id": "crash",
+        "text": "The simulation crashes.",
+        "correct": false,
+        "feedback": "It keeps running — just badly."
+      }
+    ]
+  },
+  "interactive": {
+    "instructions": "Watch the *Innovations* and *NIS* plots. When you see the spike, open *Process noise* and raise $Q$ (try ×1000), then lower it again once NIS settles.",
+    "controls": [
+      "processNoise",
+      "noise",
+      "phaseStep",
+      "observability"
+    ],
+    "steps": [
+      "Spot the NIS spike.",
+      "Raise Q.",
+      "Watch NIS return to its band; then restore Q."
+    ]
+  },
+  "objectives": [
+    {
+      "id": "spot",
+      "text": "Spot the burn (NIS spike above 8× expected)",
+      "required": true,
+      "condition": {
+        "metric": "nisMaxRecentNorm",
+        "op": ">",
+        "value": 8
+      }
+    },
+    {
+      "id": "react",
+      "text": "Raise process noise by at least 100×",
+      "required": true,
+      "condition": {
+        "event": "processNoiseChanged",
+        "where": {
+          "scale": {
+            "op": ">=",
+            "value": 100
+          }
+        }
+      }
+    },
+    {
+      "id": "recover",
+      "text": "Get NIS back in family (mean < 2× expected) after t = 2400 s",
+      "required": true,
+      "condition": {
+        "all": [
+          {
+            "metric": "t",
+            "op": ">",
+            "value": 2400
+          },
+          {
+            "metric": "nisRecentNorm",
+            "op": "<",
+            "value": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "finish",
+      "text": "Complete the shift",
+      "required": true,
+      "condition": {
+        "metric": "finished",
+        "op": "==",
+        "value": 1
+      }
+    }
+  ],
+  "hints": [
+    {
+      "id": "h1",
+      "text": "The *NIS* plot shows each fix against a χ² band. A whole run of points far above the band is the signature of model mismatch.",
+      "when": {
+        "metric": "t",
+        "op": ">",
+        "value": 1600
+      }
+    }
+  ],
+  "rules": [
+    {
+      "id": "ub-truth",
+      "when": {
+        "event": "lessonStarted"
+      },
+      "actions": [
+        {
+          "type": "say",
+          "line": "rules.truthHidden"
+        }
+      ]
+    }
+  ],
+  "reasoning": {
+    "prompt": "Why does raising $Q$ help the filter recover?",
+    "options": [
+      {
+        "id": "a",
+        "text": "It makes the measurements more accurate.",
+        "correct": false,
+        "feedback": "Q doesn't touch the measurements."
+      },
+      {
+        "id": "b",
+        "text": "It inflates $P^-$, which raises the gain so the filter trusts new measurements more than its broken prediction.",
+        "correct": true,
+        "feedback": "Exactly. Q is the filter's humility knob."
+      },
+      {
+        "id": "c",
+        "text": "It deletes the burn from the truth.",
+        "correct": false,
+        "feedback": "Truth is untouched; only the filter's belief changes."
+      }
+    ]
+  },
+  "scoring": {
+    "accuracyTargetM": 50,
+    "resourceBudget": 200
+  },
+  "debrief": {
+    "markdown": "**Truth revealed.** The burn happened at $t = 1500$ s: about 1.6 m/s, mostly along-track. Compare the error plot (now visible) with the NIS spike you saw.\n\n**Operator lesson.** Innovations are the only window on reality. A sustained NIS excursion means the model is wrong — and inflating $Q$ (or re-initialising the covariance) is the standard first response. A more sophisticated filter could *estimate* the maneuver."
+  }
+}

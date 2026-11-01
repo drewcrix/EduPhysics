@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "id": "filter_showdown",
+  "name": "Filter Showdown",
+  "description": "Same seed, same sensors, same truth. The orbit estimate starts 20 km and 15 m/s off, and nothing tracks you for the first ~5 minutes — long enough for the uncertainty to bend into a curved 'banana'. Then ground stations and a sparse GNSS receiver take over. Compare EKF, UKF, particle filter and a linear KF on accuracy, honesty of their uncertainty, and cost.",
+  "seed": 7007,
+  "epoch": "2026-01-01T00:00:00Z",
+  "greenwichAngleAtEpochDeg": 0.0,
+  "duration": 3000,
+  "dt": 10,
+  "model": "orbit6",
+  "truth": {
+    "mu": 398600441800000.0,
+    "integrator": {
+      "method": "rk4",
+      "maxStep": 10
+    },
+    "initialState": {
+      "type": "circular",
+      "altitudeM": 550000,
+      "inclinationDeg": 51.6,
+      "raanDeg": 30,
+      "argLatDeg": 0
+    }
+  },
+  "sensors": [
+    {
+      "id": "gnss",
+      "name": "GNSS receiver",
+      "type": "gnss_position",
+      "period": 120,
+      "phase": 900,
+      "trueSigma": [
+        20,
+        20,
+        20
+      ],
+      "assumedSigma": [
+        20,
+        20,
+        20
+      ],
+      "cost": 1
+    },
+    {
+      "id": "alpha",
+      "name": "Station Alpha",
+      "type": "ground_station",
+      "enabled": true,
+      "period": 10,
+      "phase": 0,
+      "station": {
+        "name": "Station Alpha",
+        "latDeg": 26.0,
+        "lonDeg": 50.0,
+        "altM": 300
+      },
+      "minElevationDeg": 10,
+      "cost": 5,
+      "trueSigma": [
+        15.0,
+        0.0005,
+        0.0005
+      ]
+    },
+    {
+      "id": "bravo",
+      "name": "Station Bravo",
+      "type": "ground_station",
+      "enabled": true,
+      "period": 10,
+      "phase": 0,
+      "station": {
+        "name": "Station Bravo",
+        "latDeg": 46.0,
+        "lonDeg": 84.0,
+        "altM": 800
+      },
+      "minElevationDeg": 10,
+      "cost": 5,
+      "trueSigma": [
+        15.0,
+        0.0005,
+        0.0005
+      ]
+    },
+    {
+      "id": "charlie",
+      "name": "Station Charlie",
+      "type": "ground_station",
+      "enabled": true,
+      "period": 10,
+      "phase": 0,
+      "station": {
+        "name": "Station Charlie",
+        "latDeg": 49.0,
+        "lonDeg": 139.0,
+        "altM": 100
+      },
+      "minElevationDeg": 10,
+      "cost": 5,
+      "trueSigma": [
+        15.0,
+        0.0005,
+        0.0005
+      ]
+    },
+    {
+      "id": "delta",
+      "name": "Station Delta",
+      "type": "ground_station",
+      "enabled": true,
+      "period": 10,
+      "phase": 0,
+      "station": {
+        "name": "Station Delta",
+        "latDeg": 19.5,
+        "lonDeg": -176.0,
+        "altM": 50
+      },
+      "minElevationDeg": 10,
+      "cost": 5,
+      "trueSigma": [
+        15.0,
+        0.0005,
+        0.0005
+      ]
+    }
+  ],
+  "estimator": {
+    "type": "ekf",
+    "initialError": [
+      15000,
+      -10000,
+      8000,
+      12,
+      -8,
+      6
+    ],
+    "initialSigma": [
+      20000,
+      20000,
+      20000,
+      15,
+      15,
+      15
+    ],
+    "processNoisePsd": 1e-10,
+    "seed": 7,
+    "pf": {
+      "particles": 1000,
+      "resampleThreshold": 0.5,
+      "roughening": true
+    },
+    "ukf": {
+      "alpha": 1.0,
+      "beta": 2.0,
+      "kappa": 0.0
+    },
+    "kf": {
+      "linearization": "reference"
+    }
+  }
+}

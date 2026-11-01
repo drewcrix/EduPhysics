@@ -1,0 +1,14 @@
+# Local toolchains (CMake/Ninja venv, emsdk) — see docs/REQUIREMENTS.md
+.tools/
+# Build trees
+build/
+build-*/
+# Frontend
+web/node_modules/
+web/dist/
+web/test-results/
+web/playwright-report/
+# Generated WebAssembly copied into the web app
+web/src/wasm/generated/
+.DS_Store
+web/tsconfig.tsbuildinfo

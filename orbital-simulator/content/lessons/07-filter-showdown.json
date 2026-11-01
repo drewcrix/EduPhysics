@@ -1,0 +1,138 @@
+{
+  "id": "filter-showdown",
+  "order": 7,
+  "title": "Filter Showdown",
+  "codename": "OPS-07",
+  "difficulty": "challenge",
+  "summary": "EKF vs UKF vs particle filter vs linear KF on the same seeded case: accuracy, honesty and cost.",
+  "scenario": "filter_showdown",
+  "truthVisible": true,
+  "requires": [
+    "unexpected-burn"
+  ],
+  "unlocks": [],
+  "variants": [
+    {
+      "id": "showdown",
+      "label": "Nonlinear showdown",
+      "scenario": "filter_showdown"
+    },
+    {
+      "id": "divergence",
+      "label": "Why a frozen KF diverges",
+      "scenario": "kf_divergence"
+    },
+    {
+      "id": "linear",
+      "label": "Linear lab (CW): where the KF is exact",
+      "scenario": "linear_lab_cw"
+    }
+  ],
+  "concepts": [
+    "ekf",
+    "ukf",
+    "particle-filter",
+    "linear-kf",
+    "nis-nees"
+  ],
+  "briefing": {
+    "markdown": "**The arena.** The orbit estimate starts **20 km and 15 m/s** off, and nobody tracks you for the first ~5 minutes (Station Alpha's pass begins at t = 290 s; GNSS only from t = 900 s). By the time the first station sees you, the true uncertainty has curved into a 'banana' that an ellipse can't describe well. Then ground stations and sparse GNSS take over.\n\n**The contestants** run on *exactly* the same truth and measurement noise (same seed):\n- **EKF** — re-linearises every step.\n- **UKF** — sigma points, no Jacobians.\n- **PF** — 1000 weighted particles.\n- **Linear KF** — a fixed linearisation (labelled honestly: it is *not* exact for two-body motion).\n\n**Scores are separate:** accuracy, calibration (ANEES/n ≈ 1 is honest), and compute cost."
+  },
+  "prediction": {
+    "prompt": "Which filter do you expect to be **over-confident** (ANEES/n ≫ 1) on this case?",
+    "options": [
+      {
+        "id": "ekf",
+        "text": "The EKF",
+        "correct": false,
+        "feedback": "The EKF may be mildly over-confident during the nonlinear phase, but it re-linearises and recovers."
+      },
+      {
+        "id": "kf",
+        "text": "The linear KF",
+        "correct": true,
+        "feedback": "Yes: it never re-linearises, so the linearisation error from a 20 km offset never goes away — and its covariance doesn't know that."
+      },
+      {
+        "id": "pf",
+        "text": "The particle filter",
+        "correct": false,
+        "feedback": "With enough particles and the regularisation safeguards, the PF's uncertainty stays honest — at a high compute price."
+      }
+    ]
+  },
+  "interactive": {
+    "instructions": "Press **Run showdown** to fly every estimator on the same seed, then compare the table and plots. Switch variants to see the frozen KF diverge, and the Linear Lab where all filters agree.",
+    "controls": [
+      "estimator",
+      "processNoise",
+      "noise",
+      "observability",
+      "seed"
+    ],
+    "steps": [
+      "Run the showdown.",
+      "Compare calibration, not just accuracy.",
+      "Try the divergence and linear variants."
+    ]
+  },
+  "objectives": [
+    {
+      "id": "showdown",
+      "text": "Run the showdown comparison",
+      "required": true,
+      "condition": {
+        "flag": "showdownRun"
+      }
+    },
+    {
+      "id": "switch",
+      "text": "Switch estimator in the live console at least once",
+      "required": false,
+      "condition": {
+        "event": "estimatorChanged"
+      }
+    },
+    {
+      "id": "finish",
+      "text": "Finish a live run",
+      "required": true,
+      "condition": {
+        "metric": "finished",
+        "op": "==",
+        "value": 1
+      }
+    }
+  ],
+  "hints": [
+    {
+      "id": "h1",
+      "text": "Compare the *dynamics evaluations* column — that's the machine-independent cost."
+    }
+  ],
+  "rules": [],
+  "reasoning": {
+    "prompt": "Two filters have the same accuracy but one has ANEES/n = 1.0 and the other 40. Which would you hand to operations?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Either — accuracy is what counts.",
+        "correct": false,
+        "feedback": "An over-confident filter will reject good measurements and mislead anyone planning with its covariance (e.g. collision avoidance)."
+      },
+      {
+        "id": "b",
+        "text": "The one with ANEES/n ≈ 1: its uncertainty can be trusted.",
+        "correct": true,
+        "feedback": "Yes. Calibration is a separate score for a reason."
+      }
+    ]
+  },
+  "scoring": {
+    "accuracyTargetM": 50,
+    "resourceBudget": 1500
+  },
+  "debrief": {
+    "markdown": "**No free lunch.** The EKF is cheap and usually good. The UKF handles curvature better for ~14× the cost. The PF makes the fewest assumptions but costs ~1000× and needs safeguards against degeneracy. A linear KF is optimal only when the system really is linear.\n\n*Placeholder:* add your discussion of when each is used in practice (e.g. batch least squares for OD, EKF on board)."
+  }
+}

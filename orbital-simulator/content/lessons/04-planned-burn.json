@@ -1,0 +1,122 @@
+{
+  "id": "planned-burn",
+  "order": 4,
+  "title": "Planned Burn",
+  "codename": "OPS-04",
+  "difficulty": "core",
+  "summary": "Execute a known 2 m/s prograde burn and predict how the estimator handles it.",
+  "scenario": "planned_burn",
+  "truthVisible": true,
+  "requires": [
+    "tracking-blackout"
+  ],
+  "unlocks": [
+    "unexpected-burn"
+  ],
+  "concepts": [
+    "process-noise",
+    "covariance"
+  ],
+  "briefing": {
+    "markdown": "**Situation.** A 2 m/s **prograde** (along-track) burn is scheduled at $t = 1500$ s to raise the orbit. Flight dynamics passes the commanded $\\Delta\\mathbf v$ to the filter together with an execution uncertainty ($\\sigma = 3$ cm/s per axis). The real thruster over-performs by 1% and is mis-pointed by 0.5°.\n\n**Event order.** At 1500 s the simulation (1) propagates to the burn time, (2) applies the impulse — truth gets the *executed* Δv, the filter the *commanded* one — and (3) only then processes the fix stamped 1500 s."
+  },
+  "prediction": {
+    "prompt": "What will the innovations look like right after the burn?",
+    "options": [
+      {
+        "id": "spike",
+        "text": "A huge spike — the filter is surprised.",
+        "correct": false,
+        "feedback": "It would be, if the filter didn't know. Here it does."
+      },
+      {
+        "id": "small",
+        "text": "Slightly larger than usual for a few fixes, then normal — only the small execution error is a surprise.",
+        "correct": true,
+        "feedback": "Right. The 1% over-performance and 0.5° pointing error are inside the execution uncertainty the filter was told about."
+      },
+      {
+        "id": "zero",
+        "text": "Exactly zero — the filter knows the burn perfectly.",
+        "correct": false,
+        "feedback": "Execution is never perfect; the filter was given an uncertainty for exactly that reason."
+      }
+    ]
+  },
+  "interactive": {
+    "instructions": "Play through the burn with the *Innovations* plot open. In the sandbox panel you can schedule an extra burn yourself.",
+    "controls": [
+      "maneuvers",
+      "processNoise",
+      "phaseStep"
+    ],
+    "steps": [
+      "Watch the velocity uncertainty jump at 1500 s.",
+      "Check NIS stays in family after the burn."
+    ]
+  },
+  "objectives": [
+    {
+      "id": "through",
+      "text": "Fly through the burn with NIS staying below 4× expected",
+      "required": true,
+      "condition": {
+        "all": [
+          {
+            "metric": "t",
+            "op": ">",
+            "value": 1800
+          },
+          {
+            "metric": "nisMaxRecentNorm",
+            "op": "<",
+            "value": 4
+          }
+        ]
+      }
+    },
+    {
+      "id": "finish",
+      "text": "Complete the run",
+      "required": true,
+      "condition": {
+        "metric": "finished",
+        "op": "==",
+        "value": 1
+      }
+    }
+  ],
+  "hints": [],
+  "rules": [],
+  "reasoning": {
+    "prompt": "Why give the filter an execution uncertainty instead of telling it the burn is perfect?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To make the plots look nicer.",
+        "correct": false,
+        "feedback": "Not quite!"
+      },
+      {
+        "id": "b",
+        "text": "So its covariance admits the burn might differ, letting the following fixes correct the actual Δv.",
+        "correct": true,
+        "feedback": "Yes — the added covariance raises the gain right after the burn so the next fixes can measure the real Δv."
+      },
+      {
+        "id": "c",
+        "text": "Because the filter can't add vectors.",
+        "correct": false,
+        "feedback": "It adds the commanded Δv to its velocity estimate directly."
+      }
+    ]
+  },
+  "scoring": {
+    "accuracyTargetM": 15,
+    "resourceBudget": 200
+  },
+  "debrief": {
+    "markdown": "**Known maneuvers are part of the model.** Telling the filter about a burn — with honest execution uncertainty — keeps it consistent through the event.\n\n*Placeholder:* add a discussion of finite burns vs impulses, and of calibrating thruster performance from post-burn tracking.",
+    "placeholder": true
+  }
+}

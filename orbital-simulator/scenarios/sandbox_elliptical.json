@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "id": "sandbox_elliptical",
+  "name": "Sandbox: Elliptical Orbit",
+  "description": "A 500 × 4000 km elliptical orbit with GNSS and two ground stations. Free play: change anything.",
+  "seed": 1111,
+  "epoch": "2026-01-01T00:00:00Z",
+  "greenwichAngleAtEpochDeg": 0.0,
+  "duration": 8000,
+  "dt": 20,
+  "model": "orbit6",
+  "truth": {
+    "mu": 398600441800000.0,
+    "integrator": {
+      "method": "rk4",
+      "maxStep": 20
+    },
+    "initialState": {
+      "type": "keplerian",
+      "aM": 8621000,
+      "e": 0.2027,
+      "iDeg": 63.4,
+      "raanDeg": 30,
+      "argpDeg": 270,
+      "nuDeg": 0
+    }
+  },
+  "sensors": [
+    {
+      "id": "gnss",
+      "name": "GNSS receiver",
+      "type": "gnss_position",
+      "period": 20,
+      "phase": 0,
+      "trueSigma": [
+        5,
+        5,
+        5
+      ],
+      "assumedSigma": [
+        5,
+        5,
+        5
+      ],
+      "cost": 1
+    },
+    {
+      "id": "alpha",
+      "name": "Station Alpha",
+      "type": "ground_station",
+      "enabled": true,
+      "period": 20,
+      "phase": 0,
+      "station": {
+        "name": "Station Alpha",
+        "latDeg": 26.0,
+        "lonDeg": 50.0,
+        "altM": 300
+      },
+      "minElevationDeg": 10,
+      "cost": 5,
+      "trueSigma": [
+        15.0,
+        0.0005,
+        0.0005
+      ]
+    },
+    {
+      "id": "charlie",
+      "name": "Station Charlie",
+      "type": "ground_station",
+      "enabled": true,
+      "period": 20,
+      "phase": 0,
+      "station": {
+        "name": "Station Charlie",
+        "latDeg": 49.0,
+        "lonDeg": 139.0,
+        "altM": 100
+      },
+      "minElevationDeg": 10,
+      "cost": 5,
+      "trueSigma": [
+        15.0,
+        0.0005,
+        0.0005
+      ]
+    }
+  ],
+  "estimator": {
+    "type": "ekf",
+    "initialError": [
+      500,
+      -400,
+      300,
+      0.5,
+      -0.4,
+      0.3
+    ],
+    "initialSigma": [
+      600,
+      600,
+      600,
+      0.6,
+      0.6,
+      0.6
+    ],
+    "processNoisePsd": 1e-10,
+    "seed": 7
+  }
+}

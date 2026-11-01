@@ -1,0 +1,179 @@
+{
+  "id": "tracking-blackout",
+  "order": 2,
+  "title": "Tracking Blackout",
+  "codename": "OPS-02",
+  "difficulty": "core",
+  "summary": "GNSS drops out for 40 minutes. Experience dead reckoning and lopsided uncertainty growth.",
+  "scenario": "tracking_blackout",
+  "truthVisible": true,
+  "requires": [
+    "first-fix"
+  ],
+  "unlocks": [
+    "planned-burn"
+  ],
+  "concepts": [
+    "dead-reckoning",
+    "process-noise",
+    "covariance"
+  ],
+  "briefing": {
+    "markdown": "**Situation.** Routine operations, a converged orbit — then the GNSS receiver goes silent from $t = 1200$ s to $t = 3600$ s. Small unmodelled accelerations (white noise, $q = 4\\times10^{-10}$ m²/s³) keep nudging the real spacecraft.\n\n**What the filter does.** With no measurements it only predicts:\n$$P_{k+1} = \\Phi P_k \\Phi^\\top + Q_d .$$\n\n**What to watch.** The *Uncertainty* plot shows 1σ in the **radial (R)**, **along-track (T)** and **cross-track (N)** directions on a log scale."
+  },
+  "prediction": {
+    "prompt": "During the outage, which direction's uncertainty will grow the most?",
+    "options": [
+      {
+        "id": "r",
+        "text": "Radial (up/down)",
+        "correct": false,
+        "feedback": "Radial errors stay bounded — they oscillate once per orbit."
+      },
+      {
+        "id": "t",
+        "text": "Along-track (ahead/behind)",
+        "correct": true,
+        "feedback": "Right. A small velocity error changes the orbital period, so the spacecraft drifts ahead or behind — and that drift accumulates every orbit."
+      },
+      {
+        "id": "n",
+        "text": "Cross-track (out of plane)",
+        "correct": false,
+        "feedback": "Cross-track motion is a separate, bounded oscillation."
+      },
+      {
+        "id": "all",
+        "text": "All three equally",
+        "correct": false,
+        "feedback": "Orbital dynamics couple the directions very unequally — that is the surprise of this lesson."
+      }
+    ]
+  },
+  "interactive": {
+    "instructions": "Play through the outage with the *Uncertainty* plot open. Then try turning GNSS off yourself, or raising $Q$, and watch how the growth changes.",
+    "controls": [
+      "sensors",
+      "processNoise",
+      "phaseStep",
+      "observability"
+    ],
+    "steps": [
+      "Watch along-track σ exceed 100 m during the outage.",
+      "Check that the error (Errors plot) stays inside its band.",
+      "Watch the first fix after the outage."
+    ]
+  },
+  "objectives": [
+    {
+      "id": "grow",
+      "text": "See along-track 1σ exceed 50 m during the outage",
+      "required": true,
+      "condition": {
+        "all": [
+          {
+            "metric": "outageActive",
+            "op": "==",
+            "value": 1
+          },
+          {
+            "metric": "alongTrackSigma",
+            "op": ">",
+            "value": 50
+          }
+        ]
+      }
+    },
+    {
+      "id": "recover",
+      "text": "Recover below 10 m after GNSS returns",
+      "required": true,
+      "condition": {
+        "all": [
+          {
+            "metric": "t",
+            "op": ">",
+            "value": 3600
+          },
+          {
+            "metric": "posSigma",
+            "op": "<",
+            "value": 10
+          }
+        ]
+      }
+    },
+    {
+      "id": "finish",
+      "text": "Complete the 90-minute shift",
+      "required": true,
+      "condition": {
+        "metric": "finished",
+        "op": "==",
+        "value": 1
+      }
+    }
+  ],
+  "hints": [
+    {
+      "id": "h1",
+      "text": "Switch the *Uncertainty* plot to watch R, T and N separately."
+    }
+  ],
+  "rules": [
+    {
+      "id": "tb-recover",
+      "when": {
+        "all": [
+          {
+            "metric": "t",
+            "op": ">",
+            "value": 3600
+          },
+          {
+            "metric": "t",
+            "op": "<",
+            "value": 3700
+          }
+        ]
+      },
+      "actions": [
+        {
+          "type": "say",
+          "text": "GNSS is back. One fix collapses the along-track σ — and because position and velocity errors are **correlated**, it fixes velocity too.",
+          "mood": "happy"
+        }
+      ]
+    }
+  ],
+  "reasoning": {
+    "prompt": "Why did the first fix after the outage also shrink the *velocity* uncertainty, even though GNSS doesn't measure velocity?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Because the filter resets velocity to zero.",
+        "correct": false,
+        "feedback": "No reset happens; the velocity estimate changed by a small, informed amount."
+      },
+      {
+        "id": "b",
+        "text": "Because during the outage position and velocity errors became strongly correlated, so learning one tells you about the other.",
+        "correct": true,
+        "feedback": "Exactly: the off-diagonal blocks of $P$ grew during dead reckoning. The gain $K = P H^\\top S^{-1}$ uses them to correct velocity from a position residual."
+      },
+      {
+        "id": "c",
+        "text": "Because GNSS secretly includes velocity.",
+        "correct": false,
+        "feedback": "This receiver reports position only."
+      }
+    ]
+  },
+  "scoring": {
+    "accuracyTargetM": 10,
+    "resourceBudget": 600
+  },
+  "debrief": {
+    "markdown": "**Dead reckoning is honest, not useless.** The estimate kept following the physics, and its uncertainty grew to admit what it no longer knew. A well-tuned filter keeps the error *inside* that growing band.\n\n**Along-track dominates** because velocity errors change the period. Operators schedule tracking passes before along-track uncertainty exceeds what a ground antenna's beam can tolerate.\n\n*Your notes:* add your own observations about how $Q$ changed the growth rate here."
+  }
+}

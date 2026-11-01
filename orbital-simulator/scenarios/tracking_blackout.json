@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "id": "tracking_blackout",
+  "name": "Tracking Blackout",
+  "description": "GNSS drops out from t = 1200 s to t = 3600 s. With no measurements the filter can only dead-reckon: watch the along-track uncertainty grow and the error stay inside it — then watch the first fix after the outage pull everything back.",
+  "seed": 2002,
+  "epoch": "2026-01-01T00:00:00Z",
+  "greenwichAngleAtEpochDeg": 0.0,
+  "duration": 5400,
+  "dt": 10,
+  "model": "orbit6",
+  "truth": {
+    "mu": 398600441800000.0,
+    "integrator": {
+      "method": "rk4",
+      "maxStep": 10
+    },
+    "initialState": {
+      "type": "circular",
+      "altitudeM": 550000,
+      "inclinationDeg": 51.6,
+      "raanDeg": 30,
+      "argLatDeg": 0
+    },
+    "processNoisePsd": 4e-10
+  },
+  "sensors": [
+    {
+      "id": "gnss",
+      "name": "GNSS receiver",
+      "type": "gnss_position",
+      "period": 10,
+      "phase": 0,
+      "trueSigma": [
+        5,
+        5,
+        5
+      ],
+      "assumedSigma": [
+        5,
+        5,
+        5
+      ],
+      "cost": 1,
+      "outages": [
+        [
+          1200,
+          3600
+        ]
+      ]
+    }
+  ],
+  "estimator": {
+    "type": "ekf",
+    "initialError": [
+      60,
+      -40,
+      30,
+      0.05,
+      -0.04,
+      0.03
+    ],
+    "initialSigma": [
+      100,
+      100,
+      100,
+      0.1,
+      0.1,
+      0.1
+    ],
+    "processNoisePsd": 4e-10,
+    "seed": 7
+  }
+}

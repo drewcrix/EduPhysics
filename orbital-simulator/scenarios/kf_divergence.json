@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "kf_divergence",
+  "name": "Why a Linear KF Diverges",
+  "description": "A standard Kalman filter needs a linear model, so this one linearises two-body gravity once, at the start, and keeps that frozen model forever. Gravity's direction rotates as the spacecraft moves, the frozen model does not — compare its errors to the EKF on the same data.",
+  "seed": 7107,
+  "epoch": "2026-01-01T00:00:00Z",
+  "greenwichAngleAtEpochDeg": 0.0,
+  "duration": 3000,
+  "dt": 10,
+  "model": "orbit6",
+  "truth": {
+    "mu": 398600441800000.0,
+    "integrator": {
+      "method": "rk4",
+      "maxStep": 10
+    },
+    "initialState": {
+      "type": "circular",
+      "altitudeM": 550000,
+      "inclinationDeg": 51.6,
+      "raanDeg": 30,
+      "argLatDeg": 0
+    }
+  },
+  "sensors": [
+    {
+      "id": "gnss",
+      "name": "GNSS receiver",
+      "type": "gnss_position",
+      "period": 30,
+      "phase": 0,
+      "trueSigma": [
+        5,
+        5,
+        5
+      ],
+      "assumedSigma": [
+        5,
+        5,
+        5
+      ],
+      "cost": 1
+    }
+  ],
+  "estimator": {
+    "type": "kf",
+    "initialError": [
+      100,
+      -80,
+      60,
+      0.1,
+      -0.08,
+      0.06
+    ],
+    "initialSigma": [
+      150,
+      150,
+      150,
+      0.15,
+      0.15,
+      0.15
+    ],
+    "processNoisePsd": 1e-10,
+    "seed": 7,
+    "kf": {
+      "linearization": "frozen"
+    }
+  }
+}

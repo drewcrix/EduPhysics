@@ -1,0 +1,151 @@
+{
+  "id": "sensor-geometry",
+  "order": 6,
+  "title": "Sensor Geometry Challenge",
+  "codename": "OPS-06",
+  "difficulty": "challenge",
+  "summary": "Compare GNSS, gyro, star tracker and ground-station range/bearing. Find what each geometry cannot see.",
+  "scenario": "sensor_geometry_orbit",
+  "truthVisible": true,
+  "requires": [
+    "noisy-receiver"
+  ],
+  "unlocks": [
+    "filter-showdown"
+  ],
+  "variants": [
+    {
+      "id": "orbit",
+      "label": "Ground tracking (6-state orbit)",
+      "scenario": "sensor_geometry_orbit",
+      "description": "Four stations: two range+bearing, two range-only. GNSS available but off."
+    },
+    {
+      "id": "attitude",
+      "label": "Attitude (12-state rigid body)",
+      "scenario": "sensor_geometry_attitude",
+      "description": "GNSS, gyro and star tracker on a rotating spacecraft with a thrust arc."
+    }
+  ],
+  "concepts": [
+    "observability",
+    "ground-tracking",
+    "euler-singularity"
+  ],
+  "briefing": {
+    "markdown": "**Two experiments.**\n\n1. **Ground tracking.** No GNSS. Four stations track you as you pass overhead: *Alpha* and *Charlie* give range + azimuth + elevation; *Bravo* and *Delta* give **range only**.\n2. **Attitude.** The full 12-state spacecraft. GNSS sees position; the gyro sees body rates; the star tracker (off at first) sees attitude. A thrust arc fires from 200 s to 400 s.\n\n**The tool.** The *Observability* panel stacks $R^{-1/2} H \\Phi$ for every measurement planned in a window and reports the **rank**, the condition number and the directions that no measurement can see."
+  },
+  "prediction": {
+    "prompt": "In the attitude experiment, with GNSS and the gyro on but the star tracker off, can the filter determine which way the spacecraft points while it is **coasting**?",
+    "options": [
+      {
+        "id": "yes",
+        "text": "Yes — GNSS positions are enough.",
+        "correct": false,
+        "feedback": "When not thrusting, attitude has no effect on the orbit, so position measurements can't reveal it."
+      },
+      {
+        "id": "no",
+        "text": "No — attitude doesn't affect position until the thruster fires.",
+        "correct": true,
+        "feedback": "Right. During the thrust arc, pitch and yaw tilt the acceleration and become (weakly) observable through GNSS. Roll about the thrust axis is the hardest to see."
+      },
+      {
+        "id": "gyro",
+        "text": "Yes — the gyro measures attitude.",
+        "correct": false,
+        "feedback": "A gyro measures *rates*. Integrating rates gives attitude *changes*, not the absolute attitude."
+      }
+    ]
+  },
+  "interactive": {
+    "instructions": "Run the observability check in different configurations: one station vs several, range-only vs range+bearing, star tracker on/off, before vs during the thrust arc. Switch experiments with the variant selector.",
+    "controls": [
+      "sensors",
+      "noise",
+      "observability",
+      "estimator",
+      "phaseStep"
+    ],
+    "steps": [
+      "Check rank with a 0 s window (a single epoch).",
+      "Enable a range-only station.",
+      "Switch to the attitude variant and check rank before and during the thrust arc."
+    ]
+  },
+  "objectives": [
+    {
+      "id": "run",
+      "text": "Run the observability check",
+      "required": true,
+      "condition": {
+        "event": "observabilityRun"
+      }
+    },
+    {
+      "id": "deficient",
+      "text": "Find a rank-deficient configuration",
+      "required": true,
+      "condition": {
+        "event": "observabilityRun",
+        "where": {
+          "deficient": true
+        }
+      }
+    },
+    {
+      "id": "rangeonly",
+      "text": "Track with a range-only station",
+      "required": false,
+      "condition": {
+        "event": "sensorToggled",
+        "where": {
+          "sensorType": "ground_range",
+          "enabled": true
+        }
+      }
+    },
+    {
+      "id": "finish",
+      "text": "Finish a run",
+      "required": true,
+      "condition": {
+        "metric": "finished",
+        "op": "==",
+        "value": 1
+      }
+    }
+  ],
+  "hints": [
+    {
+      "id": "h1",
+      "text": "A single range is one number — rank 1. A pass of ranges gives more, but poorly conditioned."
+    }
+  ],
+  "rules": [],
+  "reasoning": {
+    "prompt": "The observability matrix has full rank over a 5-minute pass of range-only data. Does that guarantee an accurate orbit?",
+    "options": [
+      {
+        "id": "yes",
+        "text": "Yes — full rank means everything is determined.",
+        "correct": false,
+        "feedback": "Full rank means every direction has *some* information. It can still be very little (huge condition number)."
+      },
+      {
+        "id": "no",
+        "text": "No — it's a local, linearised test; a large condition number means some directions are only weakly determined.",
+        "correct": true,
+        "feedback": "Exactly. Rank answers 'can I see it at all?'; the condition number and the best-case σ answer 'how well?'."
+      }
+    ]
+  },
+  "scoring": {
+    "accuracyTargetM": 300,
+    "resourceBudget": 900
+  },
+  "debrief": {
+    "markdown": "**Geometry decides what you can know.** Range-only tracking measures one number; bearing adds two more; consecutive samples add velocity through the dynamics. Attitude hides from position sensors until a thrust arc couples it into the orbit.\n\n*Placeholder for your notes:* extend with a GNSS + one-station comparison or a star-tracker outage experiment.",
+    "placeholder": true
+  }
+}

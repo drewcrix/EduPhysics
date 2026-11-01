@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "first_fix",
+  "name": "First Fix",
+  "description": "A 550 km LEO spacecraft starts with a deliberately poor orbit estimate (about 2.7 km and 2.7 m/s off). GNSS position fixes every 10 s let the EKF pull the estimate in. Watch each prediction drift and each correction snap back.",
+  "seed": 1001,
+  "epoch": "2026-01-01T00:00:00Z",
+  "greenwichAngleAtEpochDeg": 0.0,
+  "duration": 3000,
+  "dt": 10,
+  "model": "orbit6",
+  "truth": {
+    "mu": 3.986004418e14,
+    "integrator": { "method": "rk4", "maxStep": 10 },
+    "initialState": { "type": "circular", "altitudeM": 550000, "inclinationDeg": 51.6, "raanDeg": 30, "argLatDeg": 0 }
+  },
+  "sensors": [
+    { "id": "gnss", "name": "GNSS receiver", "type": "gnss_position", "period": 10, "phase": 0,
+      "trueSigma": [5, 5, 5], "assumedSigma": [5, 5, 5], "cost": 1 }
+  ],
+  "estimator": {
+    "type": "ekf",
+    "initialError": [2000, -1500, 1000, 2.0, -1.5, 1.0],
+    "initialSigma": [2000, 2000, 2000, 2.0, 2.0, 2.0],
+    "processNoisePsd": 1e-10,
+    "seed": 7
+  }
+}
