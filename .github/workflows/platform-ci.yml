@@ -1,0 +1,57 @@
+# EduPhysics portal and shared UI — continuous integration.
+# Builds the portal, checks the shared package, and assembles the site from the portal and the
+# fluids viewer (the orbital app has its own workflow; it is included only in the Pages deploy).
+name: Platform CI
+
+on:
+  push:
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'scripts/**'
+      - 'e2e/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'playwright.config.ts'
+      - '.github/workflows/platform-ci.yml'
+  pull_request:
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'scripts/**'
+      - 'e2e/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'playwright.config.ts'
+      - '.github/workflows/platform-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  portal:
+    name: Portal lint, types, tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: npm run lint -w @eduphysics/portal
+      - run: npm run typecheck -w @eduphysics/portal
+      - run: npm test -w @eduphysics/portal
+      - name: Assemble the site without the orbital app
+        run: node scripts/build-site.mjs --allow-missing-orbital --skip-orbital-build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eduphysics-site-preview
+          path: dist-site
+          retention-days: 7

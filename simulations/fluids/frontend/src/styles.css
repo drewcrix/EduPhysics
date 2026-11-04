@@ -1,0 +1,7 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import '@eduphysics/ui/styles.css';
+@import 'tailwindcss/utilities';
+
+.prose-theory b { color: #e2e8f0; font-weight: 600; }
+.katex { font-size: 1.05em; }

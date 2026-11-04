@@ -1,0 +1,18 @@
+# Node workspaces (portal, shared UI, fluids frontend)
+node_modules/
+dist/
+dist-site/
+test-results/
+playwright-report/
+*.tsbuildinfo
+
+# Python (fluids backend)
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# OS / editor
+.DS_Store

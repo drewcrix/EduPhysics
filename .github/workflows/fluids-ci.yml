@@ -1,0 +1,108 @@
+# Airfoil Flow Lab (simulations/fluids/) — continuous integration.
+#
+# backend:    ruff + the fast pytest suite (solver, analysis, data pipeline, binary format shared with
+#             the frontend, integrity of the committed dataset in simulations/fluids/data).
+# validation: the slow numerical benchmarks (cylinder flow vs published data, parity with the reference
+#             solver when present). Manual only: it takes several minutes.
+# frontend:   lint, type-check, unit tests, production build and browser tests of the viewer.
+# Nothing here regenerates the CFD dataset; that is done offline (see simulations/fluids/IMPLEMENTATION.md).
+name: Fluids Simulator CI
+
+on:
+  push:
+    paths:
+      - 'simulations/fluids/**'
+      - 'packages/ui/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/fluids-ci.yml'
+  pull_request:
+    paths:
+      - 'simulations/fluids/**'
+      - 'packages/ui/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/fluids-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fluids-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: 22
+
+jobs:
+  backend:
+    name: Python solver, analysis and dataset checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: simulations/fluids
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: simulations/fluids/backend/requirements-dev.txt
+      - run: pip install -r backend/requirements-dev.txt && pip install --no-deps -e backend
+      - name: Lint
+        run: ruff check backend tests
+      - name: Tests (fast suite)
+        run: pytest -q
+
+  validation:
+    name: Numerical validation (cylinder benchmark)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: simulations/fluids
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: simulations/fluids/backend/requirements-dev.txt
+      - run: pip install -r backend/requirements-dev.txt && pip install --no-deps -e backend
+      - run: pytest -q -m slow
+
+  frontend:
+    name: Viewer lint, types, unit tests, build, browser tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint -w @eduphysics/fluids
+      - name: Type-check
+        run: npm run typecheck -w @eduphysics/fluids
+      - name: Unit tests (decoder vs Python fixture, physics, content, dataset)
+        run: npm test -w @eduphysics/fluids
+      - name: Production build
+        run: npm run build -w @eduphysics/fluids
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Browser tests
+        env:
+          PW_CHANNEL: chromium
+        working-directory: simulations/fluids/frontend
+        run: npx playwright test --reporter=line
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: fluids-playwright-report
+          path: simulations/fluids/frontend/test-results
+          retention-days: 7

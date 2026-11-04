@@ -1,0 +1,163 @@
+{
+ "grid_study": [
+  {
+   "level": "coarse",
+   "reynolds": 200.0,
+   "aoa_deg": 8.0,
+   "cells": 17176,
+   "pressure_volumes": 16826,
+   "cl": 0.39556,
+   "cd": 0.29794,
+   "cd_pressure": 0.09696,
+   "cd_friction": 0.20099,
+   "cm": -0.00087,
+   "steady": true,
+   "time": 21.2
+  },
+  {
+   "level": "medium",
+   "reynolds": 200.0,
+   "aoa_deg": 8.0,
+   "cells": 28420,
+   "pressure_volumes": 27762,
+   "cl": 0.39305,
+   "cd": 0.30052,
+   "cd_pressure": 0.09762,
+   "cd_friction": 0.2029,
+   "cm": -0.00032,
+   "steady": true,
+   "time": 21.4
+  },
+  {
+   "level": "fine",
+   "reynolds": 200.0,
+   "aoa_deg": 8.0,
+   "cells": 69008,
+   "pressure_volumes": 67467,
+   "cl": 0.39698,
+   "cd": 0.30355,
+   "cd_pressure": 0.09913,
+   "cd_friction": 0.20442,
+   "cm": -1e-05,
+   "steady": true,
+   "time": 21.5
+  },
+  {
+   "level": "coarse",
+   "reynolds": 1000.0,
+   "aoa_deg": 4.0,
+   "cells": 16568,
+   "pressure_volumes": 16214,
+   "cl": 0.19789,
+   "cd": 0.11177,
+   "cd_pressure": 0.03771,
+   "cd_friction": 0.07406,
+   "cm": 0.00844,
+   "steady": true,
+   "time": 20.6
+  },
+  {
+   "level": "medium",
+   "reynolds": 1000.0,
+   "aoa_deg": 4.0,
+   "cells": 27580,
+   "pressure_volumes": 26923,
+   "cl": 0.20685,
+   "cd": 0.11567,
+   "cd_pressure": 0.03809,
+   "cd_friction": 0.07758,
+   "cm": 0.00868,
+   "steady": true,
+   "time": 20.3
+  },
+  {
+   "level": "fine",
+   "reynolds": 1000.0,
+   "aoa_deg": 4.0,
+   "cells": 66795,
+   "pressure_volumes": 65246,
+   "cl": 0.20531,
+   "cd": 0.1202,
+   "cd_pressure": 0.03886,
+   "cd_friction": 0.08134,
+   "cm": 0.00921,
+   "steady": true,
+   "time": 20.35
+  }
+ ],
+ "cylinder": [
+  {
+   "reynolds": 20.0,
+   "steady": true,
+   "time": 50.65367689861906,
+   "cd": 2.0563725415372227,
+   "cl": 0.00021891719766847784,
+   "cd_pressure": 1.2484998874270308,
+   "cd_friction": 0.807872654110192,
+   "recirculation_length": 0.963513413414117,
+   "separation_angle_deg": 43.122317246809445,
+   "cp_front": 1.3341398309683903,
+   "grid": {
+    "nx": 151,
+    "ny": 144,
+    "pressure_volumes": 19884,
+    "velocity_unknowns": 39229,
+    "upstream": 10.0,
+    "downstream": 20.0,
+    "lateral": 10.0,
+    "wall_spacing": 0.02,
+    "chord_spacing": 0.02,
+    "growth": 1.08,
+    "cfl": 0.5,
+    "lateral_bc": "open",
+    "outlet_bc": "convective"
+   },
+   "wall_seconds": 196.1,
+   "passed": {
+    "cd": true,
+    "recirculation_length": true,
+    "separation_angle_deg": true
+   }
+  },
+  {
+   "reynolds": 40.0,
+   "steady": true,
+   "time": 57.702830167360716,
+   "cd": 1.529147280864937,
+   "cl": 0.00011666908525245767,
+   "cd_pressure": 1.0104260928863664,
+   "cd_friction": 0.5187211879785705,
+   "recirculation_length": 2.356164125122098,
+   "separation_angle_deg": 52.95405999557841,
+   "cp_front": 1.213899781437634,
+   "grid": {
+    "nx": 151,
+    "ny": 144,
+    "pressure_volumes": 19884,
+    "velocity_unknowns": 39229,
+    "upstream": 10.0,
+    "downstream": 20.0,
+    "lateral": 10.0,
+    "wall_spacing": 0.02,
+    "chord_spacing": 0.02,
+    "growth": 1.08,
+    "cfl": 0.5,
+    "lateral_bc": "open",
+    "outlet_bc": "convective"
+   },
+   "wall_seconds": 296.5,
+   "passed": {
+    "cd": true,
+    "recirculation_length": true,
+    "separation_angle_deg": true
+   }
+  }
+ ],
+ "symmetry": {
+  "cl_plus": 0.31753950588821095,
+  "cl_minus": -0.3176144466764087,
+  "lift_asymmetry": 7.494078819775263e-05,
+  "drag_asymmetry": 5.6613093347313015e-05,
+  "moment_asymmetry": 1.299959841656248e-05
+ }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "eduphysics",
+  "private": true,
+  "version": "1.0.0",
+  "description": "EduPhysics: interactive physics simulators for engineering students.",
+  "workspaces": [
+    "packages/ui",
+    "apps/portal",
+    "simulations/fluids/frontend"
+  ],
+  "scripts": {
+    "dev:portal": "npm run dev -w @eduphysics/portal",
+    "dev:fluids": "npm run dev -w @eduphysics/fluids",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build -w @eduphysics/portal && npm run build -w @eduphysics/fluids",
+    "build:site": "node scripts/build-site.mjs",
+    "preview:site": "node scripts/preview-site.mjs",
+    "test:e2e:fluids": "npm run test:e2e -w @eduphysics/fluids",
+    "test:e2e:site": "playwright test"
+  },
+  "engines": {
+    "node": ">=20.11"
+  }
+}

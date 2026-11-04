@@ -1,0 +1,56 @@
+# Build the whole EduPhysics site (portal, orbital WebAssembly app, fluids viewer with its dataset)
+# and publish it to GitHub Pages. Manual only: enable Pages (Settings -> Pages -> Source: GitHub
+# Actions) and run this workflow from the Actions tab.
+name: Deploy site to GitHub Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  EMSDK_VERSION: 4.0.10
+  NODE_VERSION: 22
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: ${{ env.EMSDK_VERSION }}
+      - name: Orbital WebAssembly core
+        working-directory: simulations/orbital
+        run: cmake --preset wasm && cmake --build --preset wasm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Orbital web app
+        working-directory: simulations/orbital/web
+        run: npm ci && npm run build
+      - name: Portal and fluids viewer, assembled site
+        run: npm ci && node scripts/build-site.mjs --skip-orbital-build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

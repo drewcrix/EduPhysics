@@ -1,18 +1,18 @@
-# Mission Control Academy (orbital-simulator/) — continuous integration.
+# Mission Control Academy (simulations/orbital/) — continuous integration.
 #
 # Added alongside (not replacing) any existing workflows. Every job runs inside
-# orbital-simulator/. A failing step fails its job and turns the check red; nothing here
+# simulations/orbital/. A failing step fails its job and turns the check red; nothing here
 # deploys, publishes or pushes anything.
 name: Orbital Simulator CI
 
 on:
   push:
     paths:
-      - 'orbital-simulator/**'
+      - 'simulations/orbital/**'
       - '.github/workflows/orbital-simulator-ci.yml'
   pull_request:
     paths:
-      - 'orbital-simulator/**'
+      - 'simulations/orbital/**'
       - '.github/workflows/orbital-simulator-ci.yml'
   workflow_dispatch:
 
@@ -25,7 +25,7 @@ concurrency:
 
 defaults:
   run:
-    working-directory: orbital-simulator
+    working-directory: simulations/orbital
 
 env:
   EMSDK_VERSION: 4.0.10
@@ -60,7 +60,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: osim-cli-linux
-          path: orbital-simulator/build/native/core/osim_cli
+          path: simulations/orbital/build/native/core/osim_cli
           retention-days: 7
 
   sanitizers:
@@ -94,7 +94,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: osim-cli-linux
-          path: orbital-simulator/build/native/core
+          path: simulations/orbital/build/native/core
       - run: chmod +x build/native/core/osim_cli
       - uses: actions/setup-node@v4
         with:
@@ -105,8 +105,8 @@ jobs:
         with:
           name: osim-wasm
           path: |
-            orbital-simulator/build/wasm/core/osim.mjs
-            orbital-simulator/build/wasm/core/osim.wasm
+            simulations/orbital/build/wasm/core/osim.mjs
+            simulations/orbital/build/wasm/core/osim.wasm
           retention-days: 7
 
   frontend:
@@ -115,18 +115,18 @@ jobs:
     needs: wasm
     defaults:
       run:
-        working-directory: orbital-simulator/web
+        working-directory: simulations/orbital/web
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: osim-wasm
-          path: orbital-simulator/build/wasm/core
+          path: simulations/orbital/build/wasm/core
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: orbital-simulator/web/package-lock.json
+          cache-dependency-path: simulations/orbital/web/package-lock.json
       - run: npm ci
       - run: npm run wasm:copy
       - name: Lint
@@ -147,5 +147,5 @@ jobs:
         if: failure()
         with:
           name: playwright-report
-          path: orbital-simulator/web/test-results
+          path: simulations/orbital/web/test-results
           retention-days: 7
