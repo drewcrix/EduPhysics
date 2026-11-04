@@ -140,9 +140,3 @@ upload the contents of `dist-site/` (serve `.wasm` as `application/wasm`).
    (Vite `base: './'`); use `@eduphysics/ui` (Tailwind preset, `PlatformBar`) for a consistent look.
 2. Add an entry to `apps/portal/src/catalog.ts`.
 3. Build it into `dist-site/<name>/` in `scripts/build-site.mjs`, and add a CI workflow.
-
-## Credits
-
-The airfoil solver is a generalisation of the author's `naca0012_solver.py` (kept for reference in
-`fluid_flow_simulator/`). Mission Control Academy credits are in its README. Third-party libraries:
-NumPy, SciPy, matplotlib (BSD); React, Vite, Tailwind CSS, KaTeX (MIT).
