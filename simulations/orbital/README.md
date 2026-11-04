@@ -150,10 +150,3 @@ type-checks, unit-tests, builds and browser-tests the frontend. See
 | [docs/BUILD_JOURNAL.md](docs/BUILD_JOURNAL.md) | Chronological log of what was done and why |
 | [docs/IMPLEMENTATION_REPORT.md](docs/IMPLEMENTATION_REPORT.md) | Self-contained implementation report |
 
-## Credits
-
-The 12-state dynamics, Jacobian, RK4 and EKF structure follow the author's Python reference
-in `../Python_Orbit_determination/` (read-only). That code builds on Joshua A. Marshall's
-`agv-examples` (https://github.com/botprof/agv-examples). The C++ implementation is new code.
-Third-party libraries: Eigen (MPL-2.0), nlohmann/json (MIT), doctest (MIT), React, three.js,
-uPlot, KaTeX, zod (MIT).
