@@ -32,7 +32,7 @@ test.describe('Airfoil Flow Lab', () => {
     await expect(page.getByRole('heading', { name: /Governing equations/ })).toBeVisible();
     await expect(page.locator('.katex').first()).toBeVisible();
     await page.getByRole('link', { name: 'High-lift devices' }).click();
-    await expect(page.getByText('Nothing on this page is a Navier–Stokes result.', { exact: false })).toBeVisible();
+    await expect(page.getByText('multi-element configurations with slots')).toBeVisible();
     await page.getByRole('button', { name: 'Leading-edge slat' }).click();
     await expect(page.getByRole('heading', { name: 'Leading-edge slat' })).toBeVisible();
     await page.getByRole('link', { name: 'Boundary conditions' }).click();
